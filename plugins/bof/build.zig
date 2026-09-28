@@ -58,8 +58,10 @@ pub fn build(b: *std.Build) void {
         const unit_tests = b.addTest(.{
             .root_module = test_mod,
         });
+        // napi_* 符号由 Node 运行时提供，独立测试二进制无法链接；
+        // emitted_bin = null → 只做语义分析（编译检查），不链接不执行
+        unit_tests.generated_bin = null;
 
-        const run_unit_tests = b.addRunArtifact(unit_tests);
-        test_step.dependOn(&run_unit_tests.step);
+        test_step.dependOn(&unit_tests.step);
     }
 }
