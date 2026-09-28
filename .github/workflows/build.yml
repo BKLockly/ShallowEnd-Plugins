@@ -33,6 +33,11 @@ jobs:
         with:
           version: 0.16.0
 
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+
       - name: Check formatting
         run: |
           find plugins -path '*/bof-launcher' -prune -o \

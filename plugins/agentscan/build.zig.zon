@@ -1,0 +1,18 @@
+.{
+    .name = .agentscan,
+    .version = "0.1.0",
+    .fingerprint = 0x75ea0f3e2615517a,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .tokota = .{
+            .url = "https://github.com/kofi-q/tokota/archive/f8b15cf72d649229f317b9e588bb4a1622188da8.tar.gz",
+            .hash = "tokota-0.1.0-BE_-yofCCQAWt55xe2uD9yg3QuNzdXaN67bDNgdBbwL5",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "agentscan",
+    },
+}

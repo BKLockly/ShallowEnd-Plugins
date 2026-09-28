@@ -35,6 +35,20 @@ ShallowEnd-Plugins/
 | hello | 0.4.1 | Scaffold example plugin | low |
 | linux_exploit_suggester | 1.3 | Suggest kernel LPE exploits matching the target kernel | low |
 | sensitive_search | 0.14.2 | Search the target filesystem for sensitive files/credentials | medium |
+| agentscan | 0.1.0 | Intranet MCP / A2A / LLM exposure scan (embedded AgentScan engine) | medium |
+
+## Acknowledgements
+
+ShallowEnd-Plugins builds on these open-source projects — thank you! Full license details and modification notes live in [THIRD_PARTY.md](THIRD_PARTY.md).
+
+| Project | License | Used by |
+|---------|---------|---------|
+| [AgentScan](https://github.com/7anX/AgentScan) | MIT © 2026 7anX | `agentscan` plugin (embedded scan engine, vendored) |
+| [bof-launcher](https://github.com/The-Z-Labs/bof-launcher) | BSD-3-Clause © 2022-2026 Z-Labs | `bof` plugin (statically linked, vendored) |
+| [Tokota](https://github.com/kofi-q/tokota) | MIT © Nana Kofi Ohene-Adu | Zig → Node.js N-API toolkit, all plugins |
+| [base-z](https://github.com/kofi-q/base-z) | MIT | transitive dependency of Tokota |
+| [stb](https://github.com/nothings/stb) | Public Domain / MIT | vendored headers inside bof-launcher |
+| [linux-exploit-suggester](https://github.com/mzet-/linux-exploit-suggester) | GPL-3.0 | CVE knowledge base of `linux_exploit_suggester` |
 
 ## Platform Matrix
 

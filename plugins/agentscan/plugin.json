@@ -1,0 +1,194 @@
+{
+  "name": "agentscan",
+  "label": "AgentScan 内网暴露面扫描",
+  "description": "扫描内网 MCP / A2A Agent / LLM 开放接口暴露面（基于 7anX/AgentScan，MIT）",
+  "version": "0.1.0",
+  "author": "BKLockly",
+  "risk_level": "medium",
+  "methods": [
+    {
+      "name": "scan",
+      "label": "全协议扫描",
+      "description": "MCP + A2A + LLM 全协议暴露面扫描",
+      "params": [
+        {
+          "name": "targets",
+          "type": "text",
+          "label": "目标列表（IP / CIDR / 域名 / host:port，逗号或空白分隔）",
+          "required": true
+        },
+        {
+          "name": "threads",
+          "type": "number",
+          "label": "TCP 并发线程数（默认 500）",
+          "required": false
+        },
+        {
+          "name": "timeout",
+          "type": "number",
+          "label": "TCP 连接超时毫秒（默认 2000）",
+          "required": false
+        },
+        {
+          "name": "skip_port_scan",
+          "type": "checkbox",
+          "label": "输入视为已开放 host:port（跳过端口扫描）",
+          "required": false
+        },
+        {
+          "name": "proxy",
+          "type": "text",
+          "label": "代理地址（socks5/socks4/http/https，可选）",
+          "required": false
+        },
+        {
+          "name": "verbose",
+          "type": "checkbox",
+          "label": "显示探测详情",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "label": "MCP 扫描",
+      "description": "只扫 MCP Server（工具/资源/提示词枚举、OAuth 发现、蜜罐信号）",
+      "params": [
+        {
+          "name": "targets",
+          "type": "text",
+          "label": "目标列表（IP / CIDR / 域名 / host:port，逗号或空白分隔）",
+          "required": true
+        },
+        {
+          "name": "threads",
+          "type": "number",
+          "label": "TCP 并发线程数（默认 500）",
+          "required": false
+        },
+        {
+          "name": "timeout",
+          "type": "number",
+          "label": "TCP 连接超时毫秒（默认 2000）",
+          "required": false
+        },
+        {
+          "name": "skip_port_scan",
+          "type": "checkbox",
+          "label": "输入视为已开放 host:port（跳过端口扫描）",
+          "required": false
+        },
+        {
+          "name": "proxy",
+          "type": "text",
+          "label": "代理地址（socks5/socks4/http/https，可选）",
+          "required": false
+        },
+        {
+          "name": "verbose",
+          "type": "checkbox",
+          "label": "显示探测详情",
+          "required": false
+        },
+        {
+          "name": "exclude_honeypots",
+          "type": "checkbox",
+          "label": "排除蜜罐疑似结果",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "a2a",
+      "label": "A2A 扫描",
+      "description": "只扫 A2A Agent Card（skills、interfaces、无认证 JSON-RPC 可达性）",
+      "params": [
+        {
+          "name": "targets",
+          "type": "text",
+          "label": "目标列表（IP / CIDR / 域名 / host:port，逗号或空白分隔）",
+          "required": true
+        },
+        {
+          "name": "threads",
+          "type": "number",
+          "label": "TCP 并发线程数（默认 500）",
+          "required": false
+        },
+        {
+          "name": "timeout",
+          "type": "number",
+          "label": "TCP 连接超时毫秒（默认 2000）",
+          "required": false
+        },
+        {
+          "name": "skip_port_scan",
+          "type": "checkbox",
+          "label": "输入视为已开放 host:port（跳过端口扫描）",
+          "required": false
+        },
+        {
+          "name": "proxy",
+          "type": "text",
+          "label": "代理地址（socks5/socks4/http/https，可选）",
+          "required": false
+        },
+        {
+          "name": "verbose",
+          "type": "checkbox",
+          "label": "显示探测详情",
+          "required": false
+        },
+        {
+          "name": "strict",
+          "type": "checkbox",
+          "label": "精确模式：只输出高置信 Agent Card",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "llm",
+      "label": "LLM 接口扫描",
+      "description": "只扫 LLM 开放推理接口（Ollama/vLLM/TGI 等 25 种框架）",
+      "params": [
+        {
+          "name": "targets",
+          "type": "text",
+          "label": "目标列表（IP / CIDR / 域名 / host:port，逗号或空白分隔）",
+          "required": true
+        },
+        {
+          "name": "threads",
+          "type": "number",
+          "label": "TCP 并发线程数（默认 500）",
+          "required": false
+        },
+        {
+          "name": "timeout",
+          "type": "number",
+          "label": "TCP 连接超时毫秒（默认 2000）",
+          "required": false
+        },
+        {
+          "name": "skip_port_scan",
+          "type": "checkbox",
+          "label": "输入视为已开放 host:port（跳过端口扫描）",
+          "required": false
+        },
+        {
+          "name": "proxy",
+          "type": "text",
+          "label": "代理地址（socks5/socks4/http/https，可选）",
+          "required": false
+        },
+        {
+          "name": "verbose",
+          "type": "checkbox",
+          "label": "显示探测详情",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

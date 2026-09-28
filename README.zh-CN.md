@@ -35,6 +35,20 @@ ShallowEnd-Plugins/
 | hello | 0.4.1 | 脚手架示例插件 | low |
 | linux_exploit_suggester | 1.3 | 匹配目标内核的本地提权漏洞建议 | low |
 | sensitive_search | 0.14.2 | 敏感文件/凭据搜索 | medium |
+| agentscan | 0.1.0 | 内网 MCP / A2A / LLM 暴露面扫描（内嵌 AgentScan 引擎） | medium |
+
+## 致谢
+
+本项目建立在以下开源项目之上，一并致谢！完整许可证信息与修改说明见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+
+| 项目 | 许可证 | 用途 |
+|------|--------|------|
+| [AgentScan](https://github.com/7anX/AgentScan) | MIT © 2026 7anX | `agentscan` 插件（内嵌扫描引擎，vendored） |
+| [bof-launcher](https://github.com/The-Z-Labs/bof-launcher) | BSD-3-Clause © 2022-2026 Z-Labs | `bof` 插件（静态链接，vendored） |
+| [Tokota](https://github.com/kofi-q/tokota) | MIT © Nana Kofi Ohene-Adu | Zig → Node.js N-API 绑定工具，全插件共用 |
+| [base-z](https://github.com/kofi-q/base-z) | MIT | Tokota 传递依赖 |
+| [stb](https://github.com/nothings/stb) | Public Domain / MIT | bof-launcher 内 vendored 头文件 |
+| [linux-exploit-suggester](https://github.com/mzet-/linux-exploit-suggester) | GPL-3.0 | `linux_exploit_suggester` 的 CVE 知识库 |
 
 ## 平台矩阵
 

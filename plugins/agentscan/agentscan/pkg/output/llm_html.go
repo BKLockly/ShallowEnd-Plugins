@@ -1,0 +1,177 @@
+package output
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/agentscan/agentscan/pkg/models"
+)
+
+// WriteLLMHTMLReports writes standalone LLM reports (HTML + TXT).
+// Returns the report directory path or empty string if no results.
+func WriteLLMHTMLReports(results []*models.LLMServer, baseDir string, targets []string, filePath string) (string, error) {
+	if len(results) == 0 {
+		return "", nil
+	}
+
+	reportDir, err := createLLMReportDir(baseDir, targets, filePath)
+	if err != nil {
+		return "", err
+	}
+
+	reports := []struct {
+		name string
+		lang reportLanguage
+	}{
+		{name: "report.html", lang: zhReportLanguage()},
+		{name: "report_en.html", lang: enReportLanguage()},
+	}
+	for _, r := range reports {
+		path := filepath.Join(reportDir, r.name)
+		if err := writeLLMStandaloneReport(path, results, r.lang); err != nil {
+			return "", err
+		}
+	}
+
+	// Write text reports
+	if err := writeLLMTextReports(reportDir, results); err != nil {
+		return "", err
+	}
+
+	// Write summary.txt
+	summary := buildLLMSummaryText(results)
+	if err := os.WriteFile(filepath.Join(reportDir, "summary.txt"), []byte(summary), 0644); err != nil {
+		return "", fmt.Errorf("write summary.txt: %w", err)
+	}
+
+	return reportDir, nil
+}
+
+func writeLLMStandaloneReport(path string, results []*models.LLMServer, lang reportLanguage) error {
+	data := unifiedReport{
+		Lang:        lang,
+		GeneratedAt: time.Now().Format("2006-01-02 15:04:05"),
+		LLMSummary:  summarizeLLMResults(results),
+		LLMServers:  buildUnifiedLLMServers(results),
+	}
+
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("create LLM HTML report: %w", err)
+	}
+	defer f.Close()
+
+	if err := standaloneLLMTemplate.Execute(f, data); err != nil {
+		return fmt.Errorf("render LLM HTML report: %w", err)
+	}
+	return nil
+}
+
+// writeLLMTextReports generates all LLM text report files.
+func writeLLMTextReports(reportDir string, results []*models.LLMServer) error {
+	if len(results) == 0 {
+		return nil
+	}
+	subDir := filepath.Join(reportDir, "llm")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		return fmt.Errorf("create llm dir: %w", err)
+	}
+	files := map[string]string{
+		"findings.txt":      buildLLMFindingsText(results, nil),
+		"no_auth.txt":       buildLLMFindingsText(results, func(s *models.LLMServer) bool { return s.AuthStatus == "open" }),
+		"auth_required.txt": buildLLMFindingsText(results, func(s *models.LLMServer) bool { return s.AuthStatus == "auth_required" }),
+		"models.txt":        buildLLMModelsText(results),
+		"evidence.txt":      buildLLMEvidenceText(results),
+	}
+
+	for name, content := range files {
+		if content == "" {
+			continue
+		}
+		if err := os.WriteFile(filepath.Join(subDir, name), []byte(content), 0644); err != nil {
+			return fmt.Errorf("write llm/%s: %w", name, err)
+		}
+	}
+	return nil
+}
+
+func buildLLMFindingsText(results []*models.LLMServer, filter func(*models.LLMServer) bool) string {
+	var b strings.Builder
+	b.WriteString("# AgentScan LLM 扫描发现\n")
+	b.WriteString("# URL\t框架\t版本\t认证\t模型数\t命中端点\n\n")
+	headerLen := b.Len()
+	for _, r := range results {
+		if filter != nil && !filter(r) {
+			continue
+		}
+		hitPaths := make([]string, 0)
+		for _, ep := range r.Evidence.MatchedEndpoints {
+			if ep.Matched {
+				hitPaths = append(hitPaths, ep.Path)
+			}
+		}
+		fmt.Fprintf(&b, "%s\t%s\t%s\t%s\t%d\t%s\n",
+			r.URL, r.Framework, r.FrameworkVersion, r.AuthStatus, r.ModelCount, strings.Join(hitPaths, ","))
+	}
+	if b.Len() == headerLen {
+		return ""
+	}
+	return b.String()
+}
+
+func buildLLMModelsText(results []*models.LLMServer) string {
+	var b strings.Builder
+	b.WriteString("# AgentScan LLM 暴露模型列表\n")
+	b.WriteString("# URL\t框架\t模型ID\n\n")
+	headerLen := b.Len()
+	for _, r := range results {
+		for _, m := range r.Models {
+			fmt.Fprintf(&b, "%s\t%s\t%s\n", r.URL, r.Framework, m.ID)
+		}
+	}
+	if b.Len() == headerLen {
+		return ""
+	}
+	return b.String()
+}
+
+func buildLLMEvidenceText(results []*models.LLMServer) string {
+	var b strings.Builder
+	b.WriteString("# AgentScan LLM 探测证据\n\n")
+	headerLen := b.Len()
+	for _, r := range results {
+		fmt.Fprintf(&b, "## %s (%s)\n", r.URL, r.Framework)
+		for _, ep := range r.Evidence.MatchedEndpoints {
+			matched := "✗"
+			if ep.Matched {
+				matched = "✓ 命中"
+			}
+			fmt.Fprintf(&b, "  %s %s %s → %d (%.0fms)\n",
+				matched, ep.Method, ep.Path, ep.StatusCode, ep.ResponseMs)
+		}
+		b.WriteString("\n")
+	}
+	if b.Len() == headerLen {
+		return ""
+	}
+	return b.String()
+}
+
+func buildLLMSummaryText(results []*models.LLMServer) string {
+	summary := summarizeLLMResults(results)
+	var b strings.Builder
+	b.WriteString("AgentScan LLM 扫描摘要\n")
+	b.WriteString("==========================\n\n")
+	fmt.Fprintf(&b, "发现总数:      %d\n", summary.Total)
+	fmt.Fprintf(&b, "开放(无认证):  %d\n", summary.Open)
+	fmt.Fprintf(&b, "需要认证:      %d\n", summary.AuthRequired)
+	fmt.Fprintf(&b, "暴露模型:      %d\n", summary.TotalModels)
+	return b.String()
+}
+
+func createLLMReportDir(baseDir string, targets []string, filePath string) (string, error) {
+	return createReportDir(baseDir, targets, filePath)
+}

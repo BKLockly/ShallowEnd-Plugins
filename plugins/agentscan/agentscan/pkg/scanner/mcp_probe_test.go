@@ -1,0 +1,215 @@
+package scanner
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"testing"
+	"time"
+)
+
+func TestBuildProbeEndpointsExpandsMountPrefix(t *testing.T) {
+	got := buildProbeEndpoints("/9da4ht4y/", nil)
+	wantPrefix := []string{
+		"/9da4ht4y/",
+		"/9da4ht4y/mcp",
+		"/9da4ht4y/sse",
+	}
+	if len(got) < len(wantPrefix) || !reflect.DeepEqual(got[:len(wantPrefix)], wantPrefix) {
+		t.Fatalf("buildProbeEndpoints prefix = %v, want prefix %v", got[:min(len(got), len(wantPrefix))], wantPrefix)
+	}
+}
+
+func TestBuildProbeEndpointsDoesNotExpandKnownEndpoint(t *testing.T) {
+	got := buildProbeEndpoints("/mcp", nil)
+	mcpSSECount := 0
+	for _, ep := range got {
+		if ep == "/mcp/mcp" {
+			t.Fatalf("buildProbeEndpoints(/mcp) unexpectedly expanded concrete endpoint: %v", got)
+		}
+		if ep == "/mcp/sse" {
+			mcpSSECount++
+		}
+	}
+	if got[0] != "/mcp" {
+		t.Fatalf("first endpoint = %q, want /mcp", got[0])
+	}
+	if mcpSSECount != 1 {
+		t.Fatalf("/mcp/sse count = %d, want 1 in %v", mcpSSECount, got)
+	}
+}
+
+func TestSSEProbeSessionTimeoutIsBounded(t *testing.T) {
+	if got := sseProbeSessionTimeout(time.Second); got != 5*time.Second {
+		t.Fatalf("small timeout = %v, want 5s", got)
+	}
+	if got := sseProbeSessionTimeout(10 * time.Second); got != 12*time.Second {
+		t.Fatalf("large timeout = %v, want 12s", got)
+	}
+}
+
+func TestStreamableProbeTimeoutIsBoundedByConfig(t *testing.T) {
+	if got := streamableProbeTimeout(200 * time.Millisecond); got != 200*time.Millisecond {
+		t.Fatalf("short timeout = %v, want 200ms", got)
+	}
+	if got := streamableProbeTimeout(10 * time.Second); got != 3*time.Second {
+		t.Fatalf("long timeout = %v, want 3s", got)
+	}
+}
+
+func TestTryStreamableHTTPFollowsConfiguredTimeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-time.After(time.Second):
+			w.WriteHeader(http.StatusOK)
+		case <-r.Context().Done():
+			return
+		}
+	}))
+	defer server.Close()
+
+	client := buildHTTPClient("", 50*time.Millisecond)
+	start := time.Now()
+	got := tryStreamableHTTP(context.Background(), client, server.URL+"/mcp", "/mcp", 50*time.Millisecond, nil)
+	if got != nil {
+		t.Fatalf("tryStreamableHTTP() = %#v, want nil after timeout", got)
+	}
+	if elapsed := time.Since(start); elapsed > 500*time.Millisecond {
+		t.Fatalf("tryStreamableHTTP elapsed = %v, want under 500ms", elapsed)
+	}
+}
+
+func TestMCPAuthRequiredRejectsGeneric401OnKnownPath(t *testing.T) {
+	resp := httptest.NewRecorder()
+	resp.Header().Set("Content-Type", "text/html")
+	resp.WriteHeader(http.StatusUnauthorized)
+	_, _ = resp.WriteString("login required")
+
+	got, evidence := isMCPAuthRequiredWithEvidence(resp.Result(), "/mcp", map[string]bool{"/mcp": true})
+	if got {
+		t.Fatalf("auth-required = true, want false; evidence=%#v", evidence)
+	}
+}
+
+func TestMCPAuthRequiredAcceptsJSONRPC401(t *testing.T) {
+	resp := httptest.NewRecorder()
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteHeader(http.StatusUnauthorized)
+	_, _ = resp.WriteString(`{"jsonrpc":"2.0","error":{"code":-32001,"message":"unauthorized"}}`)
+
+	got, evidence := isMCPAuthRequiredWithEvidence(resp.Result(), "/mcp", map[string]bool{"/mcp": true})
+	if !got {
+		t.Fatalf("auth-required = false, want true; evidence=%#v", evidence)
+	}
+}
+
+func TestProbeMCPWithHostnameFindsSSEUnderMountPrefix(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/prefix/sse" && r.Method == http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"jsonrpc":"2.0","error":{"code":-32001,"message":"unauthorized"}}`))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer server.Close()
+
+	got := ProbeMCPWithHostname(context.Background(), server.URL, "", "/prefix/", 1000, nil)
+	if got == nil {
+		t.Fatal("ProbeMCPWithHostname() returned nil, want auth-required SSE result")
+	}
+	if got.Endpoint != "/prefix/sse" {
+		t.Fatalf("Endpoint = %q, want /prefix/sse", got.Endpoint)
+	}
+	if !got.AuthRequired {
+		t.Fatalf("AuthRequired = false, want true: %#v", got)
+	}
+}
+
+func TestTryHTTPSSELegacyRejectsEmptyJSONRPCResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/sse":
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("event: endpoint\ndata: /message?session_id=test\n"))
+		case "/message":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"jsonrpc": "2.0",
+				"id":      1,
+				"result":  nil,
+				"error":   nil,
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	client := buildHTTPClient("", time.Second)
+	got := tryHTTPSSELegacy(context.Background(), client, server.URL, "/sse", time.Second)
+	if got != nil {
+		t.Fatalf("tryHTTPSSELegacy() returned %#v, want nil for empty JSON-RPC response", got)
+	}
+}
+
+func TestTryHTTPSSELegacyAcceptsMCPInitializeResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/sse":
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("event: endpoint\ndata: /message?session_id=test\n"))
+		case "/message":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"jsonrpc": "2.0",
+				"id":      1,
+				"result": map[string]interface{}{
+					"protocolVersion": "2024-11-05",
+					"capabilities": map[string]interface{}{
+						"tools": map[string]interface{}{},
+					},
+					"serverInfo": map[string]interface{}{
+						"name":    "demo",
+						"version": "1.0.0",
+					},
+				},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	client := buildHTTPClient("", time.Second)
+	got := tryHTTPSSELegacy(context.Background(), client, server.URL, "/sse", time.Second)
+	if got == nil {
+		t.Fatal("tryHTTPSSELegacy() returned nil, want MCP result")
+	}
+	if got.ServerName != "demo" || got.ProtocolVersion != "2024-11-05" {
+		t.Fatalf("unexpected result: %#v", got)
+	}
+	if got.Evidence.URL == "" {
+		t.Fatalf("Evidence.URL is empty: %#v", got.Evidence)
+	}
+	if !got.Evidence.JSONRPC.HasResult {
+		t.Fatalf("Evidence.JSONRPC.HasResult = false, want true: %#v", got.Evidence.JSONRPC)
+	}
+	if !containsString(got.Evidence.Fingerprint.Signals, "server_info.name") {
+		t.Fatalf("fingerprint signals = %v, want server_info.name", got.Evidence.Fingerprint.Signals)
+	}
+}
+
+func containsString(items []string, want string) bool {
+	for _, item := range items {
+		if item == want {
+			return true
+		}
+	}
+	return false
+}

@@ -31,7 +31,8 @@ ShallowEnd-Plugins/
     ├── linux_exploit_suggester/
     ├── file_compress/
     ├── file_decompress/
-    └── sensitive_search/
+    ├── sensitive_search/
+    └── agentscan/             ← Zig 薄壳 + 内嵌 Go 静态二进制（上游 AgentScan，MIT）
 ```
 
 ## 平台矩阵（已拍板，2026-09-08）
@@ -64,6 +65,7 @@ ShallowEnd-Plugins/
 8. **`registry.json` 勿手改**，它由 CI 机器人提交；手工改动会在下次发布时被覆盖或造成漂移。
 9. **禁止提交构建产物**：`dist/`、`*.node`、`.zig-cache/`、`zig-out/`、`__pycache__/` 一律不入库（.gitignore 已覆盖）。
 10. **禁止硬编码任何凭据/内网地址**：CI 认证只允许 `${{ github.token }}` 或官方 actions；文档中的示例 host 一律用 `example.com` 或 GitHub URL。
+11. **第三方代码致谢与许可**：任何插件若 copy、改编或参考第三方仓库的代码/数据（含字典、知识库、PoC 源码、二进制引擎），必须满足：① 根 `README.md` / `README.zh-CN.md` 的显著致谢区列出上游（名称 + 仓库链接 + 许可证 + 用途），进仓第一眼可见；② `THIRD_PARTY.md` 登记条目（上游 URL、许可证、来源 commit、修改说明）；③ 插件目录内保留上游 LICENSE 原文；④ **无 LICENSE 的上游默认保留所有权利，禁止复制其代码/数据**，只允许独立实现或行为参考，并在 README 标注灵感来源；⑤ 许可证与仓库级 MIT 冲突时（如 GPL），该插件目录整体按其许可证对待并在 THIRD_PARTY.md 显著标注（先例：linux_exploit_suggester）。运行时上游源码快照 vendor 进插件目录是允许的（先例：bof-launcher、agentscan），但必须满足本条 ①②③；构建期依赖仍适用铁律 6（URL + hash 钉版）。
 
 ## 发布流程（全自动）
 
@@ -249,3 +251,4 @@ pub fn myMethod(call: tokota.Call) ![]const u8 {
 | hello | 0.4.1 | scaffold 示例插件 |
 | linux_exploit_suggester | 1.3 | CVE 知识库参考 The-Z-Labs 上游（GPL-3.0），Zig 匹配逻辑为原创，LICENSE/CHANGELOG 保留 |
 | sensitive_search | 0.14.2 | |
+| agentscan | 0.1.0 | Zig 薄壳 + 内嵌 Go 静态二进制（上游 7anX/AgentScan，MIT，commit 2589c30），CI 需要 Go 工具链 |

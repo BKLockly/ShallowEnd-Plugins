@@ -1,0 +1,676 @@
+package scanner
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/agentscan/agentscan/internal/mcpwire"
+	"github.com/agentscan/agentscan/internal/sseutil"
+	"github.com/agentscan/agentscan/pkg/config"
+	"github.com/agentscan/agentscan/pkg/models"
+)
+
+// ── Streamable HTTP 枚举（2025-03-26+ transport） ─────────────────────────────
+
+// EnumerateAllStreamable 在共享 HTTP client 上并行枚举 tools、resources、
+// resource templates、prompts，避免四次独立 TCP/TLS 握手。
+// 返回四者切片（任一为 nil 表示服务端不支持或返回空）。
+func EnumerateAllStreamable(ctx context.Context, baseURL, endpoint, messagePath, sessionID, hostname string, timeoutMs int, delayMs int) ([]models.MCPTool, []models.MCPResource, []models.MCPResourceTemplate, []models.MCPPrompt) {
+	timeout := time.Duration(timeoutMs) * time.Millisecond
+	client := buildHTTPClient(hostname, timeout)
+	postURL := resolvePostURL(baseURL, endpoint, messagePath)
+
+	// 完成 MCP 握手（notifications/initialized）
+	sendNotification(ctx, client, postURL, sessionID)
+
+	var (
+		tools     []models.MCPTool
+		resources []models.MCPResource
+		templates []models.MCPResourceTemplate
+		prompts   []models.MCPPrompt
+	)
+
+	if delayMs > 0 {
+		// 延时模式：串行 + 每步间隔
+		scanDelay(delayMs)
+		if data := mcpRequest(ctx, client, postURL, sessionID, 2, "tools/list", map[string]interface{}{}); data != nil {
+			tools = extractTools(data)
+		}
+		scanDelay(delayMs)
+		if data := mcpRequest(ctx, client, postURL, sessionID, 3, "resources/list", map[string]interface{}{}); data != nil {
+			resources = extractResources(data)
+		}
+		scanDelay(delayMs)
+		if data := mcpRequest(ctx, client, postURL, sessionID, 5, "resources/templates/list", map[string]interface{}{}); data != nil {
+			templates = extractResourceTemplates(data)
+		}
+		scanDelay(delayMs)
+		if data := mcpRequest(ctx, client, postURL, sessionID, 4, "prompts/list", map[string]interface{}{}); data != nil {
+			prompts = extractPrompts(data)
+		}
+		return tools, resources, templates, prompts
+	}
+
+	// 无延时：4 路并行（原有行为）
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		if data := mcpRequest(ctx, client, postURL, sessionID, 2, "tools/list", map[string]interface{}{}); data != nil {
+			tools = extractTools(data)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if data := mcpRequest(ctx, client, postURL, sessionID, 3, "resources/list", map[string]interface{}{}); data != nil {
+			resources = extractResources(data)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if data := mcpRequest(ctx, client, postURL, sessionID, 5, "resources/templates/list", map[string]interface{}{}); data != nil {
+			templates = extractResourceTemplates(data)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if data := mcpRequest(ctx, client, postURL, sessionID, 4, "prompts/list", map[string]interface{}{}); data != nil {
+			prompts = extractPrompts(data)
+		}
+	}()
+	wg.Wait()
+	return tools, resources, templates, prompts
+}
+
+// EnumerateTools 枚举服务器工具列表（只读，不调用 tools/call）
+// hostname 用于 HTTPS SNI，为空时从 baseURL 推断
+// messagePath 仅 SSE legacy transport 有效：GET /sse 返回的 POST endpoint 路径
+// （如 /mcp/v1/basic/message/?session_id=xxx）；非空时优先于 endpoint
+func EnumerateTools(ctx context.Context, baseURL, endpoint, messagePath, sessionID, hostname string, timeoutMs int) []models.MCPTool {
+	timeout := time.Duration(timeoutMs) * time.Millisecond
+	client := buildHTTPClient(hostname, timeout)
+
+	postURL := resolvePostURL(baseURL, endpoint, messagePath)
+
+	// #5: 发送 notifications/initialized，完成 MCP 握手
+	// 严格实现要求在 initialize 之后、任何请求之前收到此通知
+	sendNotification(ctx, client, postURL, sessionID)
+
+	data := mcpRequest(ctx, client, postURL, sessionID, 2, "tools/list", map[string]interface{}{})
+	if data == nil {
+		return nil
+	}
+	return extractTools(data)
+}
+
+// EnumerateResources 枚举服务器资源列表（只读采样，不调用 resources/read）
+func EnumerateResources(ctx context.Context, baseURL, endpoint, messagePath, sessionID, hostname string, timeoutMs int) []models.MCPResource {
+	timeout := time.Duration(timeoutMs) * time.Millisecond
+	client := buildHTTPClient(hostname, timeout)
+
+	postURL := resolvePostURL(baseURL, endpoint, messagePath)
+	data := mcpRequest(ctx, client, postURL, sessionID, 3, "resources/list", map[string]interface{}{})
+	if data == nil {
+		return nil
+	}
+	return extractResources(data)
+}
+
+// EnumerateResourceTemplates 枚举服务器资源模板列表（resources/templates/list）
+func EnumerateResourceTemplates(ctx context.Context, baseURL, endpoint, messagePath, sessionID, hostname string, timeoutMs int) []models.MCPResourceTemplate {
+	timeout := time.Duration(timeoutMs) * time.Millisecond
+	client := buildHTTPClient(hostname, timeout)
+
+	postURL := resolvePostURL(baseURL, endpoint, messagePath)
+	data := mcpRequest(ctx, client, postURL, sessionID, 5, "resources/templates/list", map[string]interface{}{})
+	if data == nil {
+		return nil
+	}
+	return extractResourceTemplates(data)
+}
+
+// EnumeratePrompts 枚举服务器提示词列表
+func EnumeratePrompts(ctx context.Context, baseURL, endpoint, messagePath, sessionID, hostname string, timeoutMs int) []models.MCPPrompt {
+	timeout := time.Duration(timeoutMs) * time.Millisecond
+	client := buildHTTPClient(hostname, timeout)
+
+	postURL := resolvePostURL(baseURL, endpoint, messagePath)
+	data := mcpRequest(ctx, client, postURL, sessionID, 4, "prompts/list", map[string]interface{}{})
+	if data == nil {
+		return nil
+	}
+	return extractPrompts(data)
+}
+
+// ── Modern 无状态枚举（2026-07-28 transport） ────────────────────────────────
+
+// EnumerateAllStreamableModern 在 2026-07-28 无状态 Streamable HTTP 上枚举
+// tools、resources、resource templates、prompts。
+// 与 legacy 版本的区别：无 initialize 握手、无 notifications/initialized、无 session，
+// 每个请求自带 params._meta（协议版本）与必需头 MCP-Protocol-Version + Mcp-Method。
+func EnumerateAllStreamableModern(ctx context.Context, baseURL, endpoint, hostname string, timeoutMs int, delayMs int) ([]models.MCPTool, []models.MCPResource, []models.MCPResourceTemplate, []models.MCPPrompt) {
+	timeout := time.Duration(timeoutMs) * time.Millisecond
+	client := buildHTTPClient(hostname, timeout)
+	postURL := baseURL + endpoint
+
+	var (
+		tools     []models.MCPTool
+		resources []models.MCPResource
+		templates []models.MCPResourceTemplate
+		prompts   []models.MCPPrompt
+	)
+
+	if delayMs > 0 {
+		scanDelay(delayMs)
+		tools = extractTools(modernRequest(ctx, client, postURL, "list-tools", "tools/list"))
+		scanDelay(delayMs)
+		resources = extractResources(modernRequest(ctx, client, postURL, "list-resources", "resources/list"))
+		scanDelay(delayMs)
+		templates = extractResourceTemplates(modernRequest(ctx, client, postURL, "list-restpl", "resources/templates/list"))
+		scanDelay(delayMs)
+		prompts = extractPrompts(modernRequest(ctx, client, postURL, "list-prompts", "prompts/list"))
+		return tools, resources, templates, prompts
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		tools = extractTools(modernRequest(ctx, client, postURL, "list-tools", "tools/list"))
+	}()
+	go func() {
+		defer wg.Done()
+		resources = extractResources(modernRequest(ctx, client, postURL, "list-resources", "resources/list"))
+	}()
+	go func() {
+		defer wg.Done()
+		templates = extractResourceTemplates(modernRequest(ctx, client, postURL, "list-restpl", "resources/templates/list"))
+	}()
+	go func() {
+		defer wg.Done()
+		prompts = extractPrompts(modernRequest(ctx, client, postURL, "list-prompts", "prompts/list"))
+	}()
+	wg.Wait()
+	return tools, resources, templates, prompts
+}
+
+// modernRequest 发送一个 2026-07-28 无状态 JSON-RPC 请求并返回解析后的响应。
+// body 携带 params._meta；HTTP 头设置必需的 MCP-Protocol-Version + Mcp-Method
+// （值与 body 对齐，否则服务器 400 HeaderMismatch）。
+func modernRequest(ctx context.Context, client *http.Client, postURL, id, method string) map[string]interface{} {
+	body := mcpwire.ModernRequest(id, method, nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", postURL, bytes.NewReader(body))
+	if err != nil {
+		return nil
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	req.Header.Set("User-Agent", config.UserAgent)
+	req.Header.Set("MCP-Protocol-Version", mcpwire.ModernProtocolVersion)
+	req.Header.Set("Mcp-Method", method)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil
+	}
+	ct := resp.Header.Get("Content-Type")
+	if strings.Contains(ct, "text/event-stream") {
+		return sseutil.ParseFirstMessage(resp.Body)
+	}
+	var data map[string]interface{}
+	json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&data) //nolint:errcheck
+	return data
+}
+
+// ── SSE Legacy 枚举（2024-11-05 transport） ───────────────────────────────────
+
+// EnumerateAllSSELegacy 在单个 SSE session 内依次枚举 tools、resources、resource templates、prompts，
+// 避免为每类数据单独握手。返回四者切片（任一为 nil 表示服务端不支持或返回空）。
+func EnumerateAllSSELegacy(ctx context.Context, baseURL, ssePath, hostname string, timeoutMs int, delayMs int) ([]models.MCPTool, []models.MCPResource, []models.MCPResourceTemplate, []models.MCPPrompt) {
+	sess := newSSESession(ctx, baseURL, ssePath, hostname, timeoutMs)
+	if sess == nil {
+		return nil, nil, nil, nil
+	}
+	defer sess.cancel()
+
+	// #5: 完成 MCP 握手
+	sendNotification(sess.ctx, sess.client, sess.postURL, "")
+
+	scanDelay(delayMs)
+	tools := extractTools(sseRequest(sess, 2, "tools/list", map[string]interface{}{}))
+	scanDelay(delayMs)
+	resources := extractResources(sseRequest(sess, 3, "resources/list", map[string]interface{}{}))
+	scanDelay(delayMs)
+	templates := extractResourceTemplates(sseRequest(sess, 5, "resources/templates/list", map[string]interface{}{}))
+	scanDelay(delayMs)
+	prompts := extractPrompts(sseRequest(sess, 4, "prompts/list", map[string]interface{}{}))
+	return tools, resources, templates, prompts
+}
+
+// ── 内部：SSE session 复用 ────────────────────────────────────────────────────
+
+type sseSession struct {
+	ctx     context.Context
+	cancel  context.CancelFunc
+	client  *http.Client
+	postURL string
+	msgCh   chan map[string]interface{}
+}
+
+func boundedSSESessionTimeout(timeoutMs int) time.Duration {
+	timeout := time.Duration(timeoutMs) * 2 * time.Millisecond
+	if timeout < 5*time.Second {
+		return 5 * time.Second
+	}
+	if timeout > 15*time.Second {
+		return 15 * time.Second
+	}
+	return timeout
+}
+
+// newSSESession 建立 SSE 长连接，返回可复用的 session 对象。
+// 调用方负责调用 sess.cancel() 关闭连接。
+func newSSESession(ctx context.Context, baseURL, ssePath, hostname string, timeoutMs int) *sseSession {
+	timeout := time.Duration(timeoutMs) * time.Millisecond
+	client := buildHTTPClient(hostname, timeout)
+
+	sessCtx, cancel := context.WithTimeout(ctx, boundedSSESessionTimeout(timeoutMs))
+
+	sseReq, err := http.NewRequestWithContext(sessCtx, "GET", baseURL+ssePath, nil)
+	if err != nil {
+		cancel()
+		return nil
+	}
+	sseReq.Header.Set("Accept", "text/event-stream")
+	sseReq.Header.Set("User-Agent", config.UserAgent)
+
+	sseResp, err := client.Do(sseReq)
+	if err != nil {
+		cancel()
+		return nil
+	}
+
+	if sseResp.StatusCode != 200 {
+		sseResp.Body.Close()
+		cancel()
+		return nil
+	}
+
+	postPathCh := make(chan string, 1)
+	msgCh := make(chan map[string]interface{}, 16)
+	go func() {
+		defer sseResp.Body.Close()
+		sseutil.ParseEndpointAndListen(sseResp.Body, postPathCh, msgCh)
+	}()
+
+	var postPath string
+	select {
+	case postPath = <-postPathCh:
+	case <-sessCtx.Done():
+		cancel()
+		return nil
+	}
+
+	if postPath == "" || !strings.HasPrefix(postPath, "/") ||
+		strings.Contains(postPath, "..") || strings.Contains(postPath, "://") {
+		cancel()
+		return nil
+	}
+
+	// 反向代理路径前缀修正（与 tryHTTPSSELegacy 保持一致）：
+	// 服务器返回的 endpoint path 可能不含代理前缀。
+	// 例如 ssePath=/9da4ht4y/sse，返回 data: /messages/?session_id=xxx，
+	// 需补全为 /9da4ht4y/messages/?session_id=xxx。
+	resolvedPostPath := postPath
+	sseDir := ssePath[:strings.LastIndex(ssePath, "/")]
+	if sseDir != "" && !strings.HasPrefix(postPath, sseDir) {
+		resolvedPostPath = sseDir + postPath
+	}
+
+	// initialize
+	initBody := mustMarshal(map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      1,
+		"method":  "initialize",
+		"params": map[string]interface{}{
+			"protocolVersion": "2024-11-05",
+			"capabilities":    map[string]interface{}{},
+			"clientInfo":      map[string]interface{}{"name": "mcp-client", "version": "1.0.0"},
+		},
+	})
+	postURL := baseURL + resolvedPostPath
+	initReq, err := http.NewRequestWithContext(sessCtx, "POST", postURL, bytes.NewReader(initBody))
+	if err != nil {
+		cancel()
+		return nil
+	}
+	initReq.Header.Set("Content-Type", "application/json")
+	initReq.Header.Set("User-Agent", config.UserAgent)
+	initResp, err := client.Do(initReq)
+	if err != nil {
+		cancel()
+		return nil
+	}
+	// drain body regardless of status
+	io.Copy(io.Discard, io.LimitReader(initResp.Body, 1<<20)) //nolint:errcheck
+	initResp.Body.Close()
+
+	if initResp.StatusCode != 200 && initResp.StatusCode != 202 {
+		cancel()
+		return nil
+	}
+
+	// consume any async initialize response from SSE stream (202 case)
+	// Loop until we find the message with id==1 to skip any server-initiated
+	// notifications that arrive before the initialize response.
+	if initResp.StatusCode == 202 {
+		if !drainUntilID(sessCtx, msgCh, 1) {
+			cancel()
+			return nil
+		}
+	}
+
+	return &sseSession{
+		ctx:     sessCtx,
+		cancel:  cancel,
+		client:  client,
+		postURL: postURL,
+		msgCh:   msgCh,
+	}
+}
+
+// sseRequest sends a JSON-RPC request over an existing SSE session and returns the parsed response.
+// For 202 async responses it drains msgCh until a message with the matching id arrives,
+// discarding any server-initiated notifications (which have no "id") along the way.
+func sseRequest(sess *sseSession, id int, method string, params interface{}) map[string]interface{} {
+	body := mustMarshal(map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      id,
+		"method":  method,
+		"params":  params,
+	})
+	req, err := http.NewRequestWithContext(sess.ctx, "POST", sess.postURL, bytes.NewReader(body))
+	if err != nil {
+		return nil
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", config.UserAgent)
+
+	resp, err := sess.client.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case 200:
+		ct := resp.Header.Get("Content-Type")
+		if strings.Contains(ct, "text/event-stream") {
+			return sseutil.ParseFirstMessage(resp.Body)
+		}
+		var data map[string]interface{}
+		json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&data) //nolint:errcheck
+		return data
+	case 202:
+		// Drain until we find the response whose id matches our request id.
+		// Notifications (no "id" field) and responses to other requests are skipped.
+		return drainForID(sess.ctx, sess.msgCh, id)
+	default:
+		return nil
+	}
+}
+
+// ── 内部：通用 helpers ────────────────────────────────────────────────────────
+
+// drainForID reads from msgCh until it finds a JSON-RPC message whose numeric "id"
+// matches wantID, discarding notifications (no "id") and other responses.
+// Returns nil on context cancellation or if msgCh is closed before a match is found.
+func drainForID(ctx context.Context, msgCh <-chan map[string]interface{}, wantID int) map[string]interface{} {
+	for {
+		select {
+		case msg, ok := <-msgCh:
+			if !ok {
+				return nil
+			}
+			if matchesID(msg, wantID) {
+				return msg
+			}
+			// notification or wrong id — discard and keep waiting
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+// drainUntilID reads from msgCh until it finds a message with the given id,
+// returning true on success and false on timeout/close.
+func drainUntilID(ctx context.Context, msgCh <-chan map[string]interface{}, wantID int) bool {
+	return drainForID(ctx, msgCh, wantID) != nil
+}
+
+// matchesID reports whether msg has a numeric "id" field equal to wantID.
+// JSON-RPC notifications have no "id"; responses from other requests have different ids.
+func matchesID(msg map[string]interface{}, wantID int) bool {
+	v, ok := msg["id"]
+	if !ok {
+		return false // notification — no id field
+	}
+	switch id := v.(type) {
+	case float64:
+		return int(id) == wantID
+	case int:
+		return id == wantID
+	case int64:
+		return int(id) == wantID
+	}
+	return false
+}
+
+// resolvePostURL 计算实际 POST URL（messagePath 优先于 endpoint）
+func resolvePostURL(baseURL, endpoint, messagePath string) string {
+	if messagePath != "" {
+		return baseURL + messagePath
+	}
+	return baseURL + endpoint
+}
+
+// sendNotification 发送 notifications/initialized（fire-and-forget，不等响应）
+// MCP 规范要求 client 在 initialize 成功后发此通知才算握手完成。
+func sendNotification(ctx context.Context, client *http.Client, postURL, sessionID string) {
+	body := mustMarshal(map[string]interface{}{
+		"jsonrpc": "2.0",
+		"method":  "notifications/initialized",
+		"params":  map[string]interface{}{},
+		// notifications 无 "id" 字段（规范规定）
+	})
+	req, err := http.NewRequestWithContext(ctx, "POST", postURL, bytes.NewReader(body))
+	if err != nil {
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	req.Header.Set("User-Agent", config.UserAgent)
+	if sessionID != "" {
+		req.Header.Set("Mcp-Session-Id", sessionID)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	io.Copy(io.Discard, io.LimitReader(resp.Body, 4096)) //nolint:errcheck
+	resp.Body.Close()
+}
+
+// mcpRequest 发送一个 JSON-RPC 请求到 streamable HTTP endpoint，返回解析后的响应。
+func mcpRequest(ctx context.Context, client *http.Client, postURL, sessionID string, id int, method string, params interface{}) map[string]interface{} {
+	body := mustMarshal(map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      id,
+		"method":  method,
+		"params":  params,
+	})
+	req, err := http.NewRequestWithContext(ctx, "POST", postURL, bytes.NewReader(body))
+	if err != nil {
+		return nil
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	req.Header.Set("User-Agent", config.UserAgent)
+	if sessionID != "" {
+		req.Header.Set("Mcp-Session-Id", sessionID)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil
+	}
+
+	ct := resp.Header.Get("Content-Type")
+	if strings.Contains(ct, "text/event-stream") {
+		return sseutil.ParseFirstMessage(resp.Body)
+	}
+	var data map[string]interface{}
+	json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&data) //nolint:errcheck
+	return data
+}
+
+func mustMarshal(v interface{}) []byte {
+	b, _ := json.Marshal(v)
+	return b
+}
+
+// ── 提取器 ────────────────────────────────────────────────────────────────────
+
+func extractTools(data map[string]interface{}) []models.MCPTool {
+	if data == nil {
+		return nil
+	}
+	result, ok := data["result"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	toolsRaw, ok := result["tools"].([]interface{})
+	if !ok {
+		return nil
+	}
+	var tools []models.MCPTool
+	for _, t := range toolsRaw {
+		toolMap, ok := t.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		tool := models.MCPTool{}
+		tool.Name, _ = toolMap["name"].(string)
+		tool.Description, _ = toolMap["description"].(string)
+		if schema, ok := toolMap["inputSchema"].(map[string]interface{}); ok {
+			tool.InputSchema = schema
+		}
+		if tool.Name != "" {
+			tools = append(tools, tool)
+		}
+	}
+	return tools
+}
+
+func extractResources(data map[string]interface{}) []models.MCPResource {
+	if data == nil {
+		return nil
+	}
+	result, ok := data["result"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	raw, ok := result["resources"].([]interface{})
+	if !ok {
+		return nil
+	}
+	var resources []models.MCPResource
+	for _, r := range raw {
+		m, ok := r.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		res := models.MCPResource{}
+		res.URI, _ = m["uri"].(string)
+		res.Name, _ = m["name"].(string)
+		res.Description, _ = m["description"].(string)
+		res.MIMEType, _ = m["mimeType"].(string)
+		if res.URI != "" {
+			resources = append(resources, res)
+		}
+	}
+	return resources
+}
+
+func extractPrompts(data map[string]interface{}) []models.MCPPrompt {
+	if data == nil {
+		return nil
+	}
+	result, ok := data["result"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	raw, ok := result["prompts"].([]interface{})
+	if !ok {
+		return nil
+	}
+	var prompts []models.MCPPrompt
+	for _, p := range raw {
+		m, ok := p.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		prompt := models.MCPPrompt{}
+		prompt.Name, _ = m["name"].(string)
+		prompt.Description, _ = m["description"].(string)
+		if prompt.Name != "" {
+			prompts = append(prompts, prompt)
+		}
+	}
+	return prompts
+}
+
+func extractResourceTemplates(data map[string]interface{}) []models.MCPResourceTemplate {
+	if data == nil {
+		return nil
+	}
+	result, ok := data["result"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	raw, ok := result["resourceTemplates"].([]interface{})
+	if !ok {
+		return nil
+	}
+	var templates []models.MCPResourceTemplate
+	for _, t := range raw {
+		m, ok := t.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		tmpl := models.MCPResourceTemplate{}
+		tmpl.URITemplate, _ = m["uriTemplate"].(string)
+		tmpl.Name, _ = m["name"].(string)
+		tmpl.Description, _ = m["description"].(string)
+		tmpl.MIMEType, _ = m["mimeType"].(string)
+		if tmpl.URITemplate != "" {
+			templates = append(templates, tmpl)
+		}
+	}
+	return templates
+}
