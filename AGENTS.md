@@ -20,8 +20,6 @@ ShallowEnd-Plugins/
 ├── scripts/
 │   ├── scaffold.py           ← 插件脚手架
 │   └── update_registry.py    ← registry.json 更新脚本（CI 调用）
-├── shared/
-│   └── zig-pkg/              ← vendored 依赖（tokota），全仓唯一一份
 └── plugins/
     ├── docker_detect/
     ├── bof/
@@ -55,9 +53,9 @@ ShallowEnd-Plugins/
 1. **目录名 = `plugin.json` 的 `name`**，snake_case。禁止 kebab-case 目录、禁止目录名与插件名不一致。
 2. **`plugin.json` 的 `version` 是版本唯一事实源**。发布 = 改 version + push main，CI 自动打 tag / 建 release / 更新 registry。
 3. **artifact 命名**：`<name>-linux-x64.node` / `<name>-linux-arm64.node`，`<name>` 即 plugin.json 的 name（snake_case）。
-4. **禁止**在插件目录内放：per-plugin CI、`update_registry.py` 副本、`zig-pkg/` 拷贝。这些全仓只允许一份。
-5. **tokota 依赖统一走 `../../shared/zig-pkg/`**（`build.zig.zon` 的 `.path`）。升级 tokota = 替换 shared 下目录 + 全插件 zon 同步 + 全量 CI 重编。
-6. **CI 无外网**：任何构建依赖必须 vendored 进 `shared/zig-pkg/`。
+4. **禁止**在插件目录内放：per-plugin CI、`update_registry.py` 副本、vendored 依赖拷贝。全仓只允许一份上游钉版声明（各 zon 的 url+hash）。
+5. **tokota 通过 zig 包管理器声明**：每个 `build.zig.zon` 以 `.url`（上游 commit SHA 的不可变 tarball）+ `.hash`（内容校验）钉死版本，全插件必须钉同一 commit。升级流程：`zig fetch <tarball-or-url>` 取得新 hash → 脚本化 bump 全部 zon → 全量 `zig build test` 通过后才合入。
+6. **禁止 vendored 依赖**：构建依赖一律走上游 URL + hash 锁定，不进仓库（单一事实源，杜绝快照漂移）；首次构建由 zig 自动拉取并物化到本地 `zig-pkg/`（已 gitignore）。
 7. **每个插件必须能 `zig build test`**：单元测试写在 `src/test.zig`，不得 import tokota（CI 无 Node 运行时）；需要 Node 的集成验证放 `test.js`（本地手动 `node test.js`）。
 8. **`registry.json` 勿手改**，它由 CI 机器人提交；手工改动会在下次发布时被覆盖或造成漂移。
 9. **禁止提交构建产物**：`dist/`、`*.node`、`.zig-cache/`、`zig-out/`、`__pycache__/` 一律不入库（.gitignore 已覆盖）。
@@ -114,7 +112,8 @@ CI: 遍历 plugins/*，比对 version 与已有 tag <name>-v<version>
 ## CI 说明
 
 - Runner：GitHub hosted `ubuntu-latest`，Zig 0.16.0 经 `mlugg/setup-zig@v2` 安装
-- 触发：push main（paths 限定 plugins/shared/scripts/registry/workflow）或手动 dispatch
+- 触发：push main（paths 限定 plugins/scripts/registry/workflow）或手动 dispatch
+- 质量门禁（任一失败即中止发布）：`zig fmt --check`（排除 bof-launcher 第三方源码）→ `scripts/check_consistency.py` → 全插件 `zig build test`
 - 认证：全部使用 `${{ github.token }}`（`permissions: contents: write`），无任何硬编码凭据
 - 幂等性：以 tag 存在性为判据，任何原因的重复运行都安全
 
@@ -224,10 +223,10 @@ pub fn myMethod(call: tokota.Call) ![]const u8 {
 
 | 插件 | version | 备注 |
 |------|---------|------|
-| bof | 0.0.4 | musl，静态链接 lib/ 下 bof-launcher |
+| bof | 0.2.0 | musl，静态链接 lib/ 下 bof-launcher |
 | docker_detect | 3.0.1 | 原 plugin-docker-detect |
 | file_compress | 0.2.0 | |
-| file_decompress | 0.2.0 | 原 plugin-file-decompress |
-| hello | 0.2.0 | scaffold 示例插件 |
-| linux_exploit_suggester | 0.2.0 | CVE 知识库参考 The-Z-Labs 上游（GPL-3.0），Zig 匹配逻辑为原创，LICENSE/CHANGELOG 保留 |
-| sensitive_search | 0.14.1 | |
+| file_decompress | 0.2.1 | 原 plugin-file-decompress |
+| hello | 0.4.1 | scaffold 示例插件 |
+| linux_exploit_suggester | 1.3 | CVE 知识库参考 The-Z-Labs 上游（GPL-3.0），Zig 匹配逻辑为原创，LICENSE/CHANGELOG 保留 |
+| sensitive_search | 0.14.2 | |

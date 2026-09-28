@@ -21,14 +21,15 @@ This repository vendors and redistributes third-party code. Their original licen
 - Matching logic is an original Zig implementation
 - Note: the CVE knowledge base is GPL-3.0-derived — treat `plugins/linux_exploit_suggester/` as GPL-3.0 despite the repository-wide MIT license.
 
-## tokota (vendored in `shared/zig-pkg/tokota-0.1.0-*/`)
+## tokota (fetched via the zig package manager)
 
 - Upstream: https://github.com/kofi-q/tokota
-- License: MIT, (c) Nana Kofi Ohene-Adu — see bundled `LICENSE`
+- License: MIT, (c) Nana Kofi Ohene-Adu — see upstream `LICENSE`
 - Used as: Zig → Node.js N-API binding toolkit, shared by all plugins
+- Pinned in every `build.zig.zon` via immutable commit-tarball URL + content hash (`f8b15cf72d649229f317b9e588bb4a1622188da8`, Zig 0.16.x compatible line)
 
-## zig `base` package (vendored in `shared/zig-pkg/base-0.1.0-*/`)
+## zig `base` package (transitive dependency of tokota)
 
-- Upstream: ziglang stdlib-derived utility sources shipped with the Zig distribution
-- License: MIT (see bundled `src/autodoc/LICENSE`)
-- Used as: build-time dependency of the vendored tokota package
+- Upstream: https://github.com/kofi-q/base-z (branch `zig-0.16`)
+- License: MIT (see upstream `LICENSE`)
+- Resolved transitively by the zig package manager, pinned by content hash

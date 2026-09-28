@@ -7,7 +7,13 @@ const is_linux = builtin.os.tag == .linux;
 
 const scanner = if (is_linux) @import("scanner.zig") else struct {
     pub fn scan(
-        _: []const u8, _: []u8, _: *usize, _: *usize, _: *usize, _: *usize, _: bool,
+        _: []const u8,
+        _: []u8,
+        _: *usize,
+        _: *usize,
+        _: *usize,
+        _: *usize,
+        _: bool,
     ) bool {
         return false;
     }

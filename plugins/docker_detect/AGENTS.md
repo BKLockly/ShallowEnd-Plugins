@@ -24,7 +24,7 @@ This is a **Zig** project (Node.js native addon via `tokota`), not Go. It builds
 
 - Output file `docker.node` lands in **repo root** (not `zig-out/`) — `build.zig` sets `output_dir: .{ .custom = "../" }`
 - Requires `link_libc = true` (set in `build.zig`)
-- Vendored dependency `tokota` lives at repo-root `shared/zig-pkg/` (`../../shared/zig-pkg/`) — local `.path` in `build.zig.zon`
+- Dependency `tokota` declared in `build.zig.zon` as upstream URL + content hash (zig package manager)
 - Minimum Zig version: `0.16.0`
 
 ## CI / Release

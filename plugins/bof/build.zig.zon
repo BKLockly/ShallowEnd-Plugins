@@ -1,11 +1,12 @@
 .{
     .name = .bof,
-    .version = "0.1.0",
+    .version = "0.2.0",
     .fingerprint = 0xf2a67559c485429a,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .tokota = .{
-            .path = "../../shared/zig-pkg/tokota-0.1.0-BE_-yofCCQAWt55xe2uD9yg3QuNzdXaN67bDNgdBbwL5",
+            .url = "https://github.com/kofi-q/tokota/archive/f8b15cf72d649229f317b9e588bb4a1622188da8.tar.gz",
+            .hash = "tokota-0.1.0-BE_-yofCCQAWt55xe2uD9yg3QuNzdXaN67bDNgdBbwL5",
         },
     },
     .paths = .{

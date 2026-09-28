@@ -14,7 +14,7 @@ ShallowEnd-Plugins/
 ├── scripts/
 │   ├── scaffold.py           ← new-plugin scaffolding generator
 │   └── update_registry.py    ← registry.json updater (invoked by CI)
-├── shared/zig-pkg/           ← vendored dependencies (tokota), single copy repo-wide
+├── plugins/                  ← one directory per plugin (deps resolved by the zig package manager)
 └── plugins/                  ← one directory per plugin, dir name = plugin name
 ```
 
@@ -22,13 +22,13 @@ ShallowEnd-Plugins/
 
 | Plugin | Version | Description | Risk |
 |--------|---------|-------------|------|
-| bof | 0.0.4 | Load and execute Beacon Object Files (BOF), musl static build | high |
+| bof | 0.2.0 | Load and execute Beacon Object Files (BOF), musl static build | high |
 | docker_detect | 3.0.1 | Detect Docker container environments | low |
 | file_compress | 0.2.0 | Gzip-compress a single file in pure Zig | low |
-| file_decompress | 0.2.0 | Decompress .gz files in pure Zig | low |
-| hello | 0.2.0 | Scaffold example plugin | low |
-| linux_exploit_suggester | 0.2.0 | Suggest kernel LPE exploits matching the target kernel | low |
-| sensitive_search | 0.14.1 | Search the target filesystem for sensitive files/credentials | medium |
+| file_decompress | 0.2.1 | Decompress .gz files in pure Zig | low |
+| hello | 0.4.1 | Scaffold example plugin | low |
+| linux_exploit_suggester | 1.3 | Suggest kernel LPE exploits matching the target kernel | low |
+| sensitive_search | 0.14.2 | Search the target filesystem for sensitive files/credentials | medium |
 
 ## Platform Matrix
 
@@ -103,9 +103,9 @@ make build-all          # local smoke build (CI artifacts are canonical)
 1. **Directory name = `plugin.json` `name`**, snake_case.
 2. **`plugin.json` `version` is the single source of truth** for releases.
 3. **Artifact naming**: `<name>-linux-x64.node` / `<name>-linux-arm64.node`.
-4. **Forbidden** inside plugin dirs: per-plugin CI, `update_registry.py` copies, `zig-pkg/` copies.
-5. **tokota via `../../shared/zig-pkg/`** only (build.zig.zon `.path`).
-6. **No network at build time**: all build deps vendored under `shared/zig-pkg/`.
+4. **Forbidden** inside plugin dirs: per-plugin CI, `update_registry.py` copies, vendored dependency copies.
+5. **tokota declared via the zig package manager**: `.url` pinned to an immutable upstream commit tarball + `.hash` content verification, identical across all plugins.
+6. **No vendored dependencies**: build deps resolve from upstream via URL + hash pinning; zig materializes them locally under `zig-pkg/` (gitignored).
 7. **Every plugin must pass `zig build test`**: unit tests in `src/test.zig`, no tokota import (no Node runtime in CI); Node-dependent integration goes in `test.js`.
 8. **Never hand-edit `registry.json`** — bot-owned.
 
