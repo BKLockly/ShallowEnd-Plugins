@@ -33,6 +33,24 @@ jobs:
         with:
           version: 0.16.0
 
+      - name: Check formatting
+        run: |
+          find plugins -path '*/bof-launcher' -prune -o \
+            -path '*/.zig-cache' -prune -o -path '*/zig-pkg' -prune -o \
+            \( -name '*.zig' -o -name 'build.zig.zon' \) -print0 | xargs -0 zig fmt --check
+
+      - name: Consistency check
+        run: python3 scripts/check_consistency.py
+
+      - name: Run plugin tests
+        run: |
+          set -euo pipefail
+          for dir in plugins/*/; do
+            [ -f "$dir/build.zig" ] || continue
+            echo "== zig build test: $dir"
+            (cd "$dir" && zig build test --summary all)
+          done
+
       - name: Build & release new plugin versions
         env:
           GH_TOKEN: ${{ github.token }}

@@ -7,7 +7,7 @@ for sensitive files. Part of the ShallowEnd plugin ecosystem.
 
 ```sh
 zig build test              # Run Zig unit tests (src/test.zig)
-make build-all              # Cross-compile .node for all 5 platforms → dist/
+make build-all              # Cross-compile .node for both platforms → dist/
 zig build                   # Dev build, produces sensitive_search.node in repo root
 node test.js                # Manual Node.js smoke test (requires .node file first)
 ```
@@ -24,7 +24,7 @@ node test.js                # Manual Node.js smoke test (requires .node file fir
 ## Key facts
 
 - **Platform handling:** `scanner.zig` is only compiled on Linux via `if (builtin.os.tag == .linux) @import("scanner.zig")`. Non-Linux targets (macOS, Windows) get a no-op stub. The `search()` export still works on all platforms, returning an error log on non-Linux.
-- **Dependency:** `tokota` is vendored at repo-root `shared/zig-pkg/` (`../../shared/zig-pkg/` from the plugin dir) — no network fetch needed.
+- **Dependency:** `tokota` declared in `build.zig.zon` as upstream URL + content hash (zig package manager); zig materializes it to local `zig-pkg/` on first build.
 - **Output:** `.node` file in repo root (`sensitive_search.node`). `make build-all` copies to `dist/` with platform suffixes.
 - **CI:** GitHub Actions (`.github/workflows/build.yml`) — triggered on push to `main`; idempotent tag-based release, updates `registry.json`.
 - **Clean:** `rm -f sensitive_search.node` after dev build.

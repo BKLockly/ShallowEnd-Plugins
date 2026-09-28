@@ -13,50 +13,45 @@ const DT_REG: u8 = 8;
 const DT_LNK: u8 = 10;
 
 const skip_extensions = [_][]const u8{
-    ".o", ".so", ".dll", ".dylib", ".a", ".lib",
-    ".pyc", ".pyo", ".class", ".jar", ".war",
-    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp",
-    ".mp3", ".mp4", ".avi", ".mov", ".mkv", ".wav", ".flac", ".webm",
-    ".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar", ".zst",
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
-    ".exe", ".msi", ".deb", ".rpm", ".apk", ".ipa",
-    ".bin", ".dat", ".img", ".iso", ".vmdk", ".qcow2",
-    ".node", ".ttf", ".otf", ".woff", ".woff2", ".eot",
-    ".psd", ".ai", ".eps", ".sketch", ".fig",
-    ".swp", ".swo",
+    ".o",    ".so",   ".dll",    ".dylib", ".a",     ".lib",
+    ".pyc",  ".pyo",  ".class",  ".jar",   ".war",   ".png",
+    ".jpg",  ".jpeg", ".gif",    ".bmp",   ".ico",   ".webp",
+    ".mp3",  ".mp4",  ".avi",    ".mov",   ".mkv",   ".wav",
+    ".flac", ".webm", ".zip",    ".tar",   ".gz",    ".bz2",
+    ".xz",   ".7z",   ".rar",    ".zst",   ".pdf",   ".doc",
+    ".docx", ".xls",  ".xlsx",   ".ppt",   ".pptx",  ".exe",
+    ".msi",  ".deb",  ".rpm",    ".apk",   ".ipa",   ".bin",
+    ".dat",  ".img",  ".iso",    ".vmdk",  ".qcow2", ".node",
+    ".ttf",  ".otf",  ".woff",   ".woff2", ".eot",   ".psd",
+    ".ai",   ".eps",  ".sketch", ".fig",   ".swp",   ".swo",
 };
 
 const text_extensions = [_][]const u8{
-    ".txt", ".md", ".rst", ".adoc",
-    ".json", ".xml", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf", ".properties",
-    ".env", ".envrc",
-    ".sh", ".bash", ".zsh", ".fish",
-    ".py", ".rb", ".pl", ".pm", ".tcl",
-    ".js", ".ts", ".jsx", ".tsx", ".vue",
-    ".go", ".rs", ".zig", ".java", ".kt", ".scala",
-    ".c", ".h", ".cpp", ".hpp", ".cc", ".hh", ".cxx", ".hxx",
-    ".cs", ".fs", ".fsx",
-    ".php", ".phtml",
-    ".swift",
-    ".sql", ".psql",
-    ".lua",
-    ".r", ".R",
-    ".groovy", ".gradle",
-    ".dockerfile", ".Dockerfile",
-    ".htm", ".html", ".css", ".scss", ".less", ".sass",
-    ".makefile", ".gnumakefile",
-    ".cmake",
-    ".terraform", ".tf", ".tfvars",
+    ".txt",        ".md",          ".rst",    ".adoc",
+    ".json",       ".xml",         ".yaml",   ".yml",
+    ".toml",       ".ini",         ".cfg",    ".conf",
+    ".properties", ".env",         ".envrc",  ".sh",
+    ".bash",       ".zsh",         ".fish",   ".py",
+    ".rb",         ".pl",          ".pm",     ".tcl",
+    ".js",         ".ts",          ".jsx",    ".tsx",
+    ".vue",        ".go",          ".rs",     ".zig",
+    ".java",       ".kt",          ".scala",  ".c",
+    ".h",          ".cpp",         ".hpp",    ".cc",
+    ".hh",         ".cxx",         ".hxx",    ".cs",
+    ".fs",         ".fsx",         ".php",    ".phtml",
+    ".swift",      ".sql",         ".psql",   ".lua",
+    ".r",          ".R",           ".groovy", ".gradle",
+    ".dockerfile", ".Dockerfile",  ".htm",    ".html",
+    ".css",        ".scss",        ".less",   ".sass",
+    ".makefile",   ".gnumakefile", ".cmake",  ".terraform",
+    ".tf",         ".tfvars",
 };
 
 const skip_dir_names = [_][]const u8{
-    "proc", "sys", "dev", "run", "boot", "media", "mnt",
-    ".git", ".svn", ".hg",
-    "lost+found",
-    "$RECYCLE.BIN",
-    "secfixes.d", "testdata", "fixtures", "mock", "stub",
-    "__pycache__", "node_modules", ".cache",
-    "vendor", ".tox", ".eggs",
+    "proc",     "sys",   "dev",  "run",         "boot",         "media",      "mnt",
+    ".git",     ".svn",  ".hg",  "lost+found",  "$RECYCLE.BIN", "secfixes.d", "testdata",
+    "fixtures", "mock",  "stub", "__pycache__", "node_modules", ".cache",     "vendor",
+    ".tox",     ".eggs",
 };
 
 fn tryOpenDir(dir_fd: std.posix.fd_t, name: []const u8) bool {
@@ -175,7 +170,6 @@ fn walkDir(
             }
         }
     }
-
 }
 
 fn isSkipDir(name: []const u8) bool {

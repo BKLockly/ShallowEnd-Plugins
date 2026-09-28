@@ -87,11 +87,12 @@ pub fn compress(call: tokota.Call) ![]const u8 {
     else
         0.0;
 
-    return std.fmt.allocPrint(allocator,
+    return std.fmt.allocPrint(
+        allocator,
         "[INFO] Compression complete\n" ++
-        "    Source: {s} ({d:.1} KB)\n" ++
-        "    Target: {s} ({d:.1} KB)\n" ++
-        "    Ratio: {d:.1}% reduction",
+            "    Source: {s} ({d:.1} KB)\n" ++
+            "    Target: {s} ({d:.1} KB)\n" ++
+            "    Ratio: {d:.1}% reduction",
         .{ source_path, in_kb, target_path, out_kb, ratio },
     );
 }

@@ -76,11 +76,12 @@ pub fn decompress(call: tokota.Call) ![]const u8 {
     const in_kb = @as(f64, @floatFromInt(compressed_data.len)) / 1024.0;
     const out_kb = @as(f64, @floatFromInt(decompressed_len)) / 1024.0;
 
-    return std.fmt.allocPrint(allocator,
+    return std.fmt.allocPrint(
+        allocator,
         "[INFO] Decompression complete\n" ++
-        "    Source: {s} ({d:.1} KB)\n" ++
-        "    Target: {s} ({d:.1} KB)\n" ++
-        "    Size: {d:.1} KB -> {d:.1} KB",
+            "    Source: {s} ({d:.1} KB)\n" ++
+            "    Target: {s} ({d:.1} KB)\n" ++
+            "    Size: {d:.1} KB -> {d:.1} KB",
         .{ source_path, in_kb, target_path, out_kb, in_kb, out_kb },
     );
 }

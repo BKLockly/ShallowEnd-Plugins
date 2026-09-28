@@ -14,7 +14,7 @@ ShallowEnd-Plugins/
 ├── scripts/
 │   ├── scaffold.py           ← 插件脚手架生成器
 │   └── update_registry.py    ← registry.json 更新脚本（CI 调用）
-├── shared/zig-pkg/           ← vendored 依赖（tokota），全仓唯一一份
+├── plugins/                  ← 每个插件一个目录（依赖由 zig 包管理器解析）
 └── plugins/                  ← 每个插件一个目录，目录名 = 插件名
 ```
 
@@ -22,13 +22,13 @@ ShallowEnd-Plugins/
 
 | 插件 | 版本 | 说明 | 风险 |
 |------|------|------|------|
-| bof | 0.0.4 | 加载并执行 Beacon Object Files（BOF），musl 静态链接 | high |
+| bof | 0.2.0 | 加载并执行 Beacon Object Files（BOF），musl 静态链接 | high |
 | docker_detect | 3.0.1 | Docker 容器环境检测 | low |
 | file_compress | 0.2.0 | 纯 Zig Gzip 文件压缩 | low |
-| file_decompress | 0.2.0 | 纯 Zig .gz 解压 | low |
-| hello | 0.2.0 | 脚手架示例插件 | low |
-| linux_exploit_suggester | 0.2.0 | 匹配目标内核的本地提权漏洞建议 | low |
-| sensitive_search | 0.14.1 | 敏感文件/凭据搜索 | medium |
+| file_decompress | 0.2.1 | 纯 Zig .gz 解压 | low |
+| hello | 0.4.1 | 脚手架示例插件 | low |
+| linux_exploit_suggester | 1.3 | 匹配目标内核的本地提权漏洞建议 | low |
+| sensitive_search | 0.14.2 | 敏感文件/凭据搜索 | medium |
 
 ## 平台矩阵
 
@@ -103,9 +103,9 @@ make build-all          # 本地冒烟构建（正式产物以 CI 为准）
 1. **目录名 = `plugin.json` 的 `name`**，snake_case。
 2. **`plugin.json` 的 `version` 是版本唯一事实源**。
 3. **artifact 命名**：`<name>-linux-x64.node` / `<name>-linux-arm64.node`。
-4. **禁止**在插件目录内放：per-plugin CI、`update_registry.py` 副本、`zig-pkg/` 拷贝。
-5. **tokota 统一走 `../../shared/zig-pkg/`**（`build.zig.zon` 的 `.path`）。
-6. **构建期无外网**：所有构建依赖 vendored 进 `shared/zig-pkg/`。
+4. **禁止**在插件目录内放：per-plugin CI、`update_registry.py` 副本、vendored 依赖拷贝。
+5. **tokota 通过 zig 包管理器声明**：`.url` 钉上游 commit 不可变 tarball + `.hash` 内容校验，全插件一致。
+6. **禁止 vendored 依赖**：构建依赖走上游 URL + hash 锁定；zig 自动物化到本地 `zig-pkg/`（已 gitignore）。
 7. **每个插件必须能 `zig build test`**：单元测试写 `src/test.zig`，不得 import tokota（CI 无 Node 运行时）；需要 Node 的集成验证放 `test.js`。
 8. **`registry.json` 勿手改** —— 机器人所有。
 
