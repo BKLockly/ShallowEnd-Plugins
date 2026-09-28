@@ -1,54 +1,7 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-09-08T06:45:18Z",
+  "updated_at": "2026-09-28T04:04:01Z",
   "plugins": [
-    {
-      "name": "file_compress",
-      "label": "文件压缩",
-      "description": "使用 Gzip 压缩单个文件，纯 Zig 实现，无需外部命令",
-      "version": "0.2.0",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_compress-v0.2.0",
-      "methods": [
-        {
-          "name": "compress",
-          "label": "文件压缩",
-          "description": "将文件压缩为 .gz 格式",
-          "params": [
-            {
-              "name": "source_path",
-              "type": "text",
-              "label": "源文件",
-              "required": true,
-              "description": "要压缩的文件路径"
-            },
-            {
-              "name": "target_path",
-              "type": "text",
-              "label": "目标路径",
-              "required": true,
-              "description": "输出的 .gz 文件路径"
-            }
-          ]
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "file_compress-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.2.0/file_compress-linux-arm64.node",
-          "sha256": "320337ce33cc1fdbfcfe12c266727841341225a5964f1793b395a9da8e7d6004",
-          "size": 38752
-        },
-        "linux-x64": {
-          "filename": "file_compress-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.2.0/file_compress-linux-x64.node",
-          "sha256": "7d296851de1114b9f0b9516e1c457509e3533bbd88ea2b96672c7a56287288e2",
-          "size": 39760
-        }
-      }
-    },
     {
       "name": "bof",
       "label": "BOF Launcher",
@@ -127,6 +80,53 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.0.1/docker_detect-linux-x64.node",
           "sha256": "18a409384048d57c81b1eda04e93036d44bfe03d34116699097a55bdf422ad19",
           "size": 21280
+        }
+      }
+    },
+    {
+      "name": "file_compress",
+      "label": "文件压缩",
+      "description": "使用 Gzip 压缩单个文件，纯 Zig 实现，无需外部命令",
+      "version": "0.2.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_compress-v0.2.0",
+      "methods": [
+        {
+          "name": "compress",
+          "label": "文件压缩",
+          "description": "将文件压缩为 .gz 格式",
+          "params": [
+            {
+              "name": "source_path",
+              "type": "text",
+              "label": "源文件",
+              "required": true,
+              "description": "要压缩的文件路径"
+            },
+            {
+              "name": "target_path",
+              "type": "text",
+              "label": "目标路径",
+              "required": true,
+              "description": "输出的 .gz 文件路径"
+            }
+          ]
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "file_compress-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.2.0/file_compress-linux-arm64.node",
+          "sha256": "320337ce33cc1fdbfcfe12c266727841341225a5964f1793b395a9da8e7d6004",
+          "size": 38752
+        },
+        "linux-x64": {
+          "filename": "file_compress-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.2.0/file_compress-linux-x64.node",
+          "sha256": "7d296851de1114b9f0b9516e1c457509e3533bbd88ea2b96672c7a56287288e2",
+          "size": 39760
         }
       }
     },
