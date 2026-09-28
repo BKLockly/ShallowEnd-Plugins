@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a problem with an existing plugin or the build system
+labels: [bug]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - A specific plugin (runtime behavior)
+        - Build system / CI
+        - registry.json / marketplace index
+        - Scaffolding tooling (scaffold.py, just recipes)
+    validations:
+      required: true
+  - type: input
+    id: plugin
+    attributes:
+      label: Affected plugin / component
+      placeholder: e.g. sensitive_search v0.14.2, linux-x64
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Expected vs actual behavior. Include relevant log output ([INFO]/[WARN] lines).
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Target environment
+      placeholder: e.g. Debian 12, kernel 6.1.0, x86_64
+  - type: checkboxes
+    id: authorization
+    attributes:
+      label: Authorization
+      description: Bugs may only be reproduced against systems you are authorized to test.
+      options:
+        - label: I am testing in an authorized environment
+        - label: I have read SECURITY.md and this is not a security vulnerability
+          required: true

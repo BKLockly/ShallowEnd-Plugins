@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security / vulnerability report
+    url: https://github.com/BKLockly/ShallowEnd-Plugins/security/advisories/new
+    about: Report build-system or CI vulnerabilities privately. Do not open a public issue.
+  - name: ShallowEnd main app
+    url: https://github.com/BKLockly/ShallowEnd
+    about: Issues with the ShallowEnd application itself belong there, not here.

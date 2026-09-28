@@ -1,0 +1,40 @@
+name: Plugin proposal
+description: Propose a new plugin for the ShallowEnd marketplace
+labels: [enhancement, plugin-proposal]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Proposed plugin name
+      description: snake_case; will become the directory name and artifact prefix
+      placeholder: e.g. port_scan
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose & value
+      description: What recon/exploitation/post-exploitation gap does it fill? Which existing plugins overlap?
+    validations:
+      required: true
+  - type: textarea
+    id: methods
+    attributes:
+      label: Planned methods
+      description: Exported functions (method names, params, types) — see plugin.json schema in AGENTS.md
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk level
+      options: [low, medium, high]
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints acknowledged
+      options:
+        - label: Pure Zig implementation (or statically linkable C), no runtime network fetches at build time
+        - label: Output follows the [LEVEL] line contract documented in AGENTS.md
+        - label: I can implement and maintain this plugin
+          required: true

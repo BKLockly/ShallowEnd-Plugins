@@ -79,10 +79,11 @@ def main() -> int:
         else:
             tokota_refs.add((mu.group(1), mu.group(2)))
 
-        # 5. registry sync
+        # 5. registry sync (missing entry = warning: a freshly scaffolded plugin
+        #    legitimately has none until its first CI release)
         r = registry_by_name.get(name)
         if r is None:
-            fail(f"{name}: missing from registry.json")
+            print(f"WARN: {name}: missing from registry.json (released by CI on version bump)")
         else:
             for k in ("version", "label", "description", "author", "risk_level"):
                 if r.get(k) != pj.get(k):

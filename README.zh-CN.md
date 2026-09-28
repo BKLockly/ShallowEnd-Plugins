@@ -1,5 +1,8 @@
 # ShallowEnd-Plugins
 
+[![Build and Release](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml/badge.svg)](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 [ShallowEnd](https://github.com/BKLockly/ShallowEnd) 市场官方插件 monorepo。插件使用 Zig + [Tokota](https://github.com/kofi-q/tokota) 编写，编译为 Node.js 原生 addon（`.node`，N-API），跨 Node 版本兼容。市场索引 `registry.json` 位于仓库根目录，由 CI 机器人维护。
 
 本仓与 ShallowEnd 主程序完全解耦：主程序仅通过 `plugin_marketplace_url` 配置指向本仓的 `registry.json`。
@@ -11,9 +14,12 @@ ShallowEnd-Plugins/
 ├── .github/workflows/
 │   └── build.yml             ← 唯一 CI：构建 / 发布 / 更新索引
 ├── registry.json             ← 市场索引（机器人维护，勿手改）
+├── Justfile                  ← 仓库级任务入口（just test / check / new / ...）
 ├── scripts/
 │   ├── scaffold.py           ← 插件脚手架生成器
-│   └── update_registry.py    ← registry.json 更新脚本（CI 调用）
+│   ├── check_consistency.py  ← 一致性检查（CI 门禁 + 本地 just check）
+│   ├── update_registry.py    ← registry.json 更新脚本（CI 调用）
+│   └── update_tokota.py      ← tokota 钉版升级
 ├── plugins/                  ← 每个插件一个目录（依赖由 zig 包管理器解析）
 └── plugins/                  ← 每个插件一个目录，目录名 = 插件名
 ```
@@ -90,7 +96,7 @@ CI: 遍历 plugins/*，比对已有 tag <name>-v<version>
 ## 新增插件
 
 ```bash
-python3 scripts/scaffold.py port_scan --label "端口扫描" --desc "TCP 端口扫描" --risk medium
+just new port_scan --label "端口扫描" --desc "TCP 端口扫描" --risk medium
 cd plugins/port_scan
 zig build test          # 单元测试
 make build-all          # 本地冒烟构建（正式产物以 CI 为准）
@@ -110,6 +116,21 @@ make build-all          # 本地冒烟构建（正式产物以 CI 为准）
 8. **`registry.json` 勿手改** —— 机器人所有。
 
 ## 本地开发
+
+仓库级任务统一走 [just](https://github.com/casey/just)（见 `Justfile`）：
+
+```bash
+just test            # 全部插件单元测试（或 just test bof hello）
+just build-all       # 所有插件正式产物 → dist/
+just check           # 仓库一致性检查
+just fmt / fmt-check # 格式化 / 检查（第三方源码除外）
+just pre-push        # fmt-check + check + test
+just new <name> ...  # 创建新插件
+just update-tokota <tarball-or-url>  # 升级 tokota 钉版
+just clean
+```
+
+单插件构建仍走各自目录的 `Makefile`：
 
 ```bash
 cd plugins/<name>
