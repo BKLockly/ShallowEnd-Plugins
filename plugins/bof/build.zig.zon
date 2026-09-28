@@ -1,0 +1,17 @@
+.{
+    .name = .bof,
+    .version = "0.1.0",
+    .fingerprint = 0xf2a67559c485429a,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .tokota = .{
+            .path = "../../shared/zig-pkg/tokota-0.1.0-BE_-yofCCQAWt55xe2uD9yg3QuNzdXaN67bDNgdBbwL5",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "lib",
+    },
+}

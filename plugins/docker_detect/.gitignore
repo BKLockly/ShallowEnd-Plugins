@@ -1,0 +1,3 @@
+docker.node
+.zig-cache/
+dist/
