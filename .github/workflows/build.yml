@@ -76,7 +76,7 @@ jobs:
 
             gh release create "$tag" \
               --title "$name v$version" \
-              --notes "ShallowEnd plugin **$name** v$version — see plugin [README](https://github.com/${REPO_SLUG}/tree/main/$dir) for details." \
+              --generate-notes \
               --latest=false \
               "$dir"/dist/*.node
 

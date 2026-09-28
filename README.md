@@ -1,5 +1,8 @@
 # ShallowEnd-Plugins
 
+[![Build and Release](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml/badge.svg)](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Official plugin monorepo for the [ShallowEnd](https://github.com/BKLockly/ShallowEnd) marketplace. Plugins are written in Zig + [Tokota](https://github.com/kofi-q/tokota) and compiled to Node.js native addons (`.node`, N-API) — version-independent across Node runtimes. The marketplace index `registry.json` lives at the repo root and is maintained by the CI bot.
 
 This repository is fully decoupled from the ShallowEnd main app: the app only points its `plugin_marketplace_url` setting at this repo's `registry.json`.
@@ -11,9 +14,12 @@ ShallowEnd-Plugins/
 ├── .github/workflows/
 │   └── build.yml             ← the only CI: build / release / index update
 ├── registry.json             ← marketplace index (bot-maintained, do not hand-edit)
+├── Justfile                  ← repo-level task runner (just test / check / new / ...)
 ├── scripts/
 │   ├── scaffold.py           ← new-plugin scaffolding generator
-│   └── update_registry.py    ← registry.json updater (invoked by CI)
+│   ├── check_consistency.py  ← consistency checks (CI gate + local `just check`)
+│   ├── update_registry.py    ← registry.json updater (invoked by CI)
+│   └── update_tokota.py      ← bump the pinned tokota dependency
 ├── plugins/                  ← one directory per plugin (deps resolved by the zig package manager)
 └── plugins/                  ← one directory per plugin, dir name = plugin name
 ```
@@ -90,7 +96,7 @@ The client validates artifacts by `sha256` on install and selects the artifact m
 ## Add a Plugin
 
 ```bash
-python3 scripts/scaffold.py port_scan --label "Port Scan" --desc "TCP port scanner" --risk medium
+just new port_scan --label "Port Scan" --desc "TCP port scanner" --risk medium
 cd plugins/port_scan
 zig build test          # unit tests
 make build-all          # local smoke build (CI artifacts are canonical)
@@ -110,6 +116,21 @@ make build-all          # local smoke build (CI artifacts are canonical)
 8. **Never hand-edit `registry.json`** — bot-owned.
 
 ## Local Development
+
+Repo-level tasks run through [just](https://github.com/casey/just) (see `Justfile`):
+
+```bash
+just test            # unit tests, all plugins (or: just test bof hello)
+just build-all       # canonical artifacts for every plugin → dist/
+just check           # repo consistency checks
+just fmt / fmt-check # formatting (third-party sources excluded)
+just pre-push        # fmt-check + check + test
+just new <name> ...  # scaffold a new plugin
+just update-tokota <tarball-or-url>  # bump the pinned tokota version
+just clean
+```
+
+Per-plugin builds still go through each plugin's `Makefile`:
 
 ```bash
 cd plugins/<name>

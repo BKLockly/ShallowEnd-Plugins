@@ -14,12 +14,16 @@ ShallowEnd-Plugins/
 ├── README.md / README.zh-CN.md
 ├── LICENSE                   ← MIT
 ├── THIRD_PARTY.md            ← 第三方组件与许可证声明
+├── CHANGELOG.md              ← 仓库级/工具链变更记录
+├── Justfile                  ← 仓库级任务入口（just test/build-all/check/...）
 ├── registry.json             ← 市场索引（CI 机器人自动维护，勿手改）
 ├── .github/workflows/
 │   └── build.yml             ← 唯一的 CI，构建/发布/更新索引
 ├── scripts/
 │   ├── scaffold.py           ← 插件脚手架
-│   └── update_registry.py    ← registry.json 更新脚本（CI 调用）
+│   ├── check_consistency.py  ← 一致性检查（CI 门禁 + 本地 just check）
+│   ├── update_registry.py    ← registry.json 更新脚本（CI 调用）
+│   └── update_tokota.py      ← tokota 钉版升级（just update-tokota）
 └── plugins/
     ├── docker_detect/
     ├── bof/
@@ -117,13 +121,28 @@ CI: 遍历 plugins/*，比对 version 与已有 tag <name>-v<version>
 - 认证：全部使用 `${{ github.token }}`（`permissions: contents: write`），无任何硬编码凭据
 - 幂等性：以 tag 存在性为判据，任何原因的重复运行都安全
 
+## 任务运行器（just）
+
+仓库级工作流统一走根 `Justfile`（需安装 [just](https://github.com/casey/just)）：
+
+| 命令 | 作用 |
+|------|------|
+| `just test [plugin...]` | 单元测试（默认全插件） |
+| `just build-all` / `just build <plugin>` | 正式产物构建（CI 同款） |
+| `just check` | `scripts/check_consistency.py` 一致性检查 |
+| `just fmt` / `just fmt-check` | 格式化 / 检查（排除 bof-launcher） |
+| `just pre-push` | 推送前全量自查（fmt-check + check + test） |
+| `just new <name> [opts]` | 创建新插件（封装 scaffold.py） |
+| `just update-tokota <tarball-or-url>` | 全仓 bump tokota 钉版 |
+| `just node-test <plugin>` / `just clean` | 集成冒烟 / 清理 |
+
+单插件目录内的 `Makefile` 仍然有效（build-all/test/node-test/clean），两者并存：Makefile 管单插件构建，just 管跨插件工作流。
+
 ## 新增插件
 
 ```bash
-python3 scripts/scaffold.py port_scan --label "端口扫描" --desc "TCP 端口扫描" --risk medium
+just new port_scan --label "端口扫描" --desc "TCP 端口扫描" --risk medium
 cd plugins/port_scan
-zig build test          # 单元测试
-make build-all          # 本地冒烟（darwin 交叉编译，正式产物以 CI 为准）
 # 改 src/root.zig 实现逻辑，完善 plugin.json methods
 # bump version → git push → CI 自动发布
 ```
