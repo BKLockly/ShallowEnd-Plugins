@@ -1,0 +1,16 @@
+{
+  "name": "docker_detect",
+  "label": "Docker 环境检测",
+  "description": "检测目标是否运行在 Docker 容器中，支持 /.dockerenv、cgroup、mountinfo、环境变量等多维度检测",
+  "version": "3.0.1",
+  "author": "BKLockly",
+  "risk_level": "low",
+  "methods": [
+    {
+      "name": "detect",
+      "label": "Docker 检测",
+      "description": "检测当前环境是否为 Docker 容器",
+      "params": []
+    }
+  ]
+}

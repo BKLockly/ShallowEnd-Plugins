@@ -1,0 +1,96 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "plugins/**"
+      - "shared/**"
+      - "scripts/**"
+      - "registry.json"
+      - ".github/workflows/build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # e.g. BKLockly/ShallowEnd-Plugins — override on forked runners if needed
+  REPO_SLUG: ${{ github.repository }}
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # tag 存在性检查需要完整 tag 列表
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: Build & release new plugin versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/built
+          : > /tmp/built/list
+
+          for dir in plugins/*/; do
+            [ -f "$dir/plugin.json" ] || continue
+            name=$(python3 -c "import json;print(json.load(open('$dir/plugin.json'))['name'])")
+            version=$(python3 -c "import json;print(json.load(open('$dir/plugin.json'))['version'])")
+            tag="${name}-v${version}"
+
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              echo "== $name v$version: tag $tag already exists, skip"
+              continue
+            fi
+
+            echo "== Building $name v$version ($tag)"
+            make -C "$dir" build-all
+            ls -la "$dir/dist"
+
+            gh release create "$tag" \
+              --title "$name v$version" \
+              --notes "ShallowEnd plugin **$name** v$version — see plugin [README](https://github.com/${REPO_SLUG}/tree/main/$dir) for details." \
+              --latest=false \
+              "$dir"/dist/*.node
+
+            echo "$dir" >> /tmp/built/list
+          done
+
+      - name: Update registry.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ ! -s /tmp/built/list ]; then
+            echo "No plugins built, registry unchanged"
+            exit 0
+          fi
+          while IFS= read -r dir; do
+            name=$(python3 -c "import json;print(json.load(open('$dir/plugin.json'))['name'])")
+            version=$(python3 -c "import json;print(json.load(open('$dir/plugin.json'))['version'])")
+            python3 scripts/update_registry.py \
+              --name "$name" \
+              --version "$version" \
+              --repo-url "https://github.com/${REPO_SLUG}" \
+              --release-url "https://github.com/${REPO_SLUG}/releases/tag/${name}-v${version}" \
+              --artifacts-dir "$dir/dist" \
+              --plugin-json "$dir/plugin.json" \
+              --registry-path registry.json
+          done < /tmp/built/list
+
+          git add registry.json
+          PLUGINS=$(cat /tmp/built/list | xargs -n1 basename | tr '\n' ' ')
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "ci: update registry for ${PLUGINS}[skip ci]"
+          git pull --rebase origin main || true
+          git push origin HEAD:main

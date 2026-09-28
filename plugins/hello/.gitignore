@@ -1,0 +1,8 @@
+.zig-cache/
+zig-out/
+*.node
+dist/
+.DS_Store
+*.swp
+*.swo
+*~

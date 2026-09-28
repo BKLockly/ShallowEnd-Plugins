@@ -1,0 +1,26 @@
+{
+  "name": "sensitive_search",
+  "label": "敏感文件搜索",
+  "description": "在 Linux 系统上搜索敏感文件（证书、密钥、密码等）",
+  "version": "0.14.2",
+  "author": "BKLockly",
+  "platform": "linux",
+  "risk_level": "medium",
+  "methods": [
+    {
+      "name": "search",
+      "label": "敏感文件搜索",
+      "description": "扫描常见路径，通过文件名和文件内容匹配检测敏感文件（密钥、密码、Token等）",
+      "params": [
+        {
+          "name": "search_content",
+          "type": "checkbox",
+          "label": "搜索文件内容",
+          "required": false,
+          "default": false,
+          "description": "是否扫描文件内容（默认仅匹配文件名，开启后还会读取文件内容搜索密钥、密码等）"
+        }
+      ]
+    }
+  ]
+}

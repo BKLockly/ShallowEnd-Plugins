@@ -1,0 +1,35 @@
+{
+  "name": "hello",
+  "label": "Hello World",
+  "description": "Zig + Tokota 示例插件",
+  "version": "0.4.1",
+  "author": "BKLockly",
+  "risk_level": "low",
+  "methods": [
+    {
+      "name": "sayHello",
+      "label": "Hello",
+      "description": "返回问候语",
+      "params": []
+    },
+    {
+      "name": "add",
+      "label": "加法",
+      "description": "两个数字相加",
+      "params": [
+        {
+          "name": "a",
+          "type": "number",
+          "label": "数字 A",
+          "required": true
+        },
+        {
+          "name": "b",
+          "type": "number",
+          "label": "数字 B",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

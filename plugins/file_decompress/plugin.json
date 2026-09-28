@@ -1,0 +1,34 @@
+{
+  "name": "file_decompress",
+  "label": "文件解压",
+  "description": "使用 Gzip 解压 .gz 文件为源文件，纯 Zig 实现，无需外部命令",
+  "version": "0.2.1",
+  "author": "BKLockly",
+  "risk_level": "low",
+  "platforms": [
+    "linux"
+  ],
+  "methods": [
+    {
+      "name": "decompress",
+      "label": "文件解压",
+      "description": "将 .gz 文件解压为源文件",
+      "params": [
+        {
+          "name": "source_path",
+          "type": "text",
+          "label": "源文件",
+          "required": true,
+          "description": "要解压的 .gz 文件路径"
+        },
+        {
+          "name": "target_path",
+          "type": "text",
+          "label": "目标路径",
+          "required": true,
+          "description": "输出的源文件路径"
+        }
+      ]
+    }
+  ]
+}

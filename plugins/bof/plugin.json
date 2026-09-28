@@ -1,0 +1,33 @@
+{
+  "name": "bof",
+  "label": "BOF Launcher",
+  "description": "加载并执行 Beacon Object Files (BOF)",
+  "version": "0.2.0",
+  "author": "BKLockly",
+  "risk_level": "high",
+  "methods": [
+    {
+      "name": "executeBof",
+      "label": "执行 BOF",
+      "description": "执行一个 BOF 文件",
+      "params": [
+        {
+          "name": "bof_file",
+          "type": "file",
+          "label": "BOF 文件",
+          "required": true,
+          "accept": ".o",
+          "description": "选择要执行的 BOF 文件"
+        },
+        {
+          "name": "args",
+          "type": "text",
+          "label": "命令行参数",
+          "required": false,
+          "default": "",
+          "description": "传递给 BOF 的命令行参数"
+        }
+      ]
+    }
+  ]
+}
