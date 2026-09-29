@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-09-29T01:45:07Z",
+  "updated_at": "2026-09-29T04:22:37Z",
   "plugins": [
     {
       "name": "bof",
@@ -508,6 +508,46 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.1.0/agentscan-linux-x64.node",
           "sha256": "60a16759fc8f20b7ba7db3b5b5c2a7405c6dc2eae84a94b01358ae1a12faad44",
           "size": 3912984
+        }
+      }
+    },
+    {
+      "name": "mysql_driver",
+      "label": "MySQL 驱动",
+      "description": "MySQL 数据库驱动（mysql2 CJS bundle），供推送目标机内存加载（dbDriverLoad）",
+      "version": "1.0.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "js",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/mysql_driver-v1.0.0",
+      "methods": [],
+      "artifacts": {
+        "any": {
+          "filename": "mysql_driver.js",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/mysql_driver-v1.0.0/mysql_driver.js",
+          "sha256": "5b8a7a416dd4e80cb8cd8734856c09fbc94e26fc0dd6ab3d373cfe299b2c3305",
+          "size": 1399199
+        }
+      }
+    },
+    {
+      "name": "pg_driver",
+      "label": "PostgreSQL 驱动",
+      "description": "PostgreSQL 数据库驱动（pg CJS bundle），供推送目标机内存加载（dbDriverLoad）",
+      "version": "1.0.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "js",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/pg_driver-v1.0.0",
+      "methods": [],
+      "artifacts": {
+        "any": {
+          "filename": "pg_driver.js",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/pg_driver-v1.0.0/pg_driver.js",
+          "sha256": "ad6b9c88be14cf2f250bc0a9db75f3a0f89f087f75ca90103168417d5199dd70",
+          "size": 179719
         }
       }
     }
