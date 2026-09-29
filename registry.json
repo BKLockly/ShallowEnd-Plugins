@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-09-29T05:58:21Z",
+  "updated_at": "2026-09-29T06:00:08Z",
   "plugins": [
     {
       "name": "bof",
@@ -541,14 +541,14 @@
         "linux-arm64": {
           "filename": "agentscan-linux-arm64.node",
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.2.0/agentscan-linux-arm64.node",
-          "sha256": "506c67c8c659e62f7c51358616c0325a8522ff3576479487675b5cc4f259582c",
-          "size": 3648552
+          "sha256": "ccb29d10be8b9ebdde3260a9f29e44777bf592374588d26f3e8853ffc75ab9eb",
+          "size": 3669224
         },
         "linux-x64": {
           "filename": "agentscan-linux-x64.node",
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.2.0/agentscan-linux-x64.node",
-          "sha256": "ce74a0d37a73b2b1d5273c786d83a6b7700cae67269f11bb15d5118e3b9a5fc6",
-          "size": 4021912
+          "sha256": "bf704d566fd5baccab8c8b63e7d610ff91b11a6e66bca0c66cf2a44e95b46880",
+          "size": 4045848
         }
       }
     }
