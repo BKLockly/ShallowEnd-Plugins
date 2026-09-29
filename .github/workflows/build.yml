@@ -89,7 +89,21 @@ jobs:
               --title "$name v$version" \
               --generate-notes \
               --latest=false \
+              --draft=false \
               "$dir"/dist/*
+
+            # 保险：确认 release 已发布（草稿状态会导致 releases/download 404）
+            for i in 1 2 3; do
+              if [ "$(gh release view "$tag" --json isDraft --jq .isDraft)" = "false" ]; then
+                break
+              fi
+              echo "release $tag is draft, retry publishing ($i/3)"
+              gh release edit "$tag" --draft=false
+              sleep 2
+            done
+            [ "$(gh release view "$tag" --json isDraft --jq .isDraft)" = "false" ] || {
+              echo "ERROR: release $tag is still a draft"; exit 1;
+            }
 
             echo "$dir" >> /tmp/built/list
           done
