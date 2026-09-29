@@ -55,12 +55,13 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run unit tests");
 
-    // 纯逻辑单测（无 tokota，真跑）
+    // 纯逻辑单测（无 tokota，真跑）；runner 的 monoNs 走 std.c，必须显式 link libc
     const test_mod = b.createModule(.{
         .root_source_file = b.path("src/test.zig"),
         .target = target,
         .optimize = optimize,
     });
+    test_mod.link_libc = true;
     const unit_tests = b.addTest(.{ .root_module = test_mod });
     test_step.dependOn(&b.addRunArtifact(unit_tests).step);
 
@@ -71,6 +72,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    check_mod.link_libc = true;
     check_mod.addImport("tokota", tokota_dep.module("tokota"));
     check_mod.addImport("payload", payload_mod);
     const check_tests = b.addTest(.{ .root_module = check_mod });
