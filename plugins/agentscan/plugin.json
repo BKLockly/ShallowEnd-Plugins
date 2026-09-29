@@ -1,8 +1,8 @@
 {
   "name": "agentscan",
   "label": "AgentScan 内网暴露面扫描",
-  "description": "扫描内网 MCP / A2A Agent / LLM 开放接口暴露面（基于 7anX/AgentScan，MIT）",
-  "version": "0.1.0",
+  "description": "扫描内网 MCP / A2A Agent / LLM 开放接口暴露面（基于 7anX/AgentScan，MIT）；v0.2.0 起扫描在 libuv 线程池异步执行（返回 Promise），不再阻塞目标机 Node 事件循环",
+  "version": "0.2.0",
   "author": "BKLockly",
   "risk_level": "medium",
   "methods": [
