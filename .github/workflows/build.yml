@@ -137,3 +137,6 @@ jobs:
               commit -m "ci: update registry for ${PLUGINS}[skip ci]"
           git pull --rebase origin main || true
           git push origin HEAD:main
+
+          # 主动刷新 jsDelivr 分支缓存（市场走 cdn.jsdelivr.net，分支引用默认缓存最长 12h）
+          curl -sS -X POST "https://purge.jsdelivr.net/gh/${REPO_SLUG}@main/registry.json" || true
