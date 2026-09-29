@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-09-29T04:22:37Z",
+  "updated_at": "2026-09-29T05:58:21Z",
   "plugins": [
     {
       "name": "bof",
@@ -302,14 +302,55 @@
       }
     },
     {
+      "name": "mysql_driver",
+      "label": "MySQL 驱动",
+      "description": "MySQL 数据库驱动（mysql2 CJS bundle），供推送目标机内存加载（dbDriverLoad）",
+      "version": "1.0.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "js",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/mysql_driver-v1.0.0",
+      "methods": [],
+      "artifacts": {
+        "any": {
+          "filename": "mysql_driver.js",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/mysql_driver-v1.0.0/mysql_driver.js",
+          "sha256": "5b8a7a416dd4e80cb8cd8734856c09fbc94e26fc0dd6ab3d373cfe299b2c3305",
+          "size": 1399199
+        }
+      }
+    },
+    {
+      "name": "pg_driver",
+      "label": "PostgreSQL 驱动",
+      "description": "PostgreSQL 数据库驱动（pg CJS bundle），供推送目标机内存加载（dbDriverLoad）",
+      "version": "1.0.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "js",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/pg_driver-v1.0.0",
+      "methods": [],
+      "artifacts": {
+        "any": {
+          "filename": "pg_driver.js",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/pg_driver-v1.0.0/pg_driver.js",
+          "sha256": "ad6b9c88be14cf2f250bc0a9db75f3a0f89f087f75ca90103168417d5199dd70",
+          "size": 179719
+        }
+      }
+    },
+    {
       "name": "agentscan",
       "label": "AgentScan 内网暴露面扫描",
-      "description": "扫描内网 MCP / A2A Agent / LLM 开放接口暴露面（基于 7anX/AgentScan，MIT）",
-      "version": "0.1.0",
+      "description": "扫描内网 MCP / A2A Agent / LLM 开放接口暴露面（基于 7anX/AgentScan，MIT）；v0.2.0 起扫描在 libuv 线程池异步执行（返回 Promise），不再阻塞目标机 Node 事件循环",
+      "version": "0.2.0",
       "author": "BKLockly",
       "risk_level": "medium",
+      "type": "native",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/agentscan-v0.1.0",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/agentscan-v0.2.0",
       "methods": [
         {
           "name": "scan",
@@ -499,55 +540,15 @@
       "artifacts": {
         "linux-arm64": {
           "filename": "agentscan-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.1.0/agentscan-linux-arm64.node",
-          "sha256": "e949068a9ee75ab0b8a28e5f6f6d6fb7411f3b77353d085ee898a848fa6c44a8",
-          "size": 3538048
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.2.0/agentscan-linux-arm64.node",
+          "sha256": "506c67c8c659e62f7c51358616c0325a8522ff3576479487675b5cc4f259582c",
+          "size": 3648552
         },
         "linux-x64": {
           "filename": "agentscan-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.1.0/agentscan-linux-x64.node",
-          "sha256": "60a16759fc8f20b7ba7db3b5b5c2a7405c6dc2eae84a94b01358ae1a12faad44",
-          "size": 3912984
-        }
-      }
-    },
-    {
-      "name": "mysql_driver",
-      "label": "MySQL 驱动",
-      "description": "MySQL 数据库驱动（mysql2 CJS bundle），供推送目标机内存加载（dbDriverLoad）",
-      "version": "1.0.0",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "type": "js",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/mysql_driver-v1.0.0",
-      "methods": [],
-      "artifacts": {
-        "any": {
-          "filename": "mysql_driver.js",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/mysql_driver-v1.0.0/mysql_driver.js",
-          "sha256": "5b8a7a416dd4e80cb8cd8734856c09fbc94e26fc0dd6ab3d373cfe299b2c3305",
-          "size": 1399199
-        }
-      }
-    },
-    {
-      "name": "pg_driver",
-      "label": "PostgreSQL 驱动",
-      "description": "PostgreSQL 数据库驱动（pg CJS bundle），供推送目标机内存加载（dbDriverLoad）",
-      "version": "1.0.0",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "type": "js",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/pg_driver-v1.0.0",
-      "methods": [],
-      "artifacts": {
-        "any": {
-          "filename": "pg_driver.js",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/pg_driver-v1.0.0/pg_driver.js",
-          "sha256": "ad6b9c88be14cf2f250bc0a9db75f3a0f89f087f75ca90103168417d5199dd70",
-          "size": 179719
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.2.0/agentscan-linux-x64.node",
+          "sha256": "ce74a0d37a73b2b1d5273c786d83a6b7700cae67269f11bb15d5118e3b9a5fc6",
+          "size": 4021912
         }
       }
     }
