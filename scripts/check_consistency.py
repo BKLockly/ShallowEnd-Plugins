@@ -65,19 +65,22 @@ def main() -> int:
         if not SEMVER.fullmatch(pj.get("version", "")):
             fail(f"{name}: version {pj.get('version')!r} is not strict semver (X.Y.Z)")
 
-        # 3. zon version sync
+        # 3./4. zon version + tokota pin：仅 native（Zig）插件；js 插件无 Zig 工程
         zon_path = os.path.join(d, "build.zig.zon")
-        zon = open(zon_path).read()
-        m = re.search(r'\.version = "([^"]+)"', zon)
-        if not m or m.group(1) != pj["version"]:
-            fail(f"{name}: build.zig.zon version {m.group(1) if m else None!r} != plugin.json {pj['version']!r}")
-
-        # 4. tokota pin consistency
-        mu = re.search(r'\.tokota = \.\{\s*\.url = "([^"]+)",\s*\.hash = "([^"]+)",', zon)
-        if not mu:
-            fail(f"{name}: tokota dependency not declared as url+hash")
+        if pj.get("type", "native") == "js":
+            if zon_path and os.path.exists(zon_path):
+                fail(f"{name}: js 插件不应携带 build.zig.zon")
         else:
-            tokota_refs.add((mu.group(1), mu.group(2)))
+            zon = open(zon_path).read()
+            m = re.search(r'\.version = "([^"]+)"', zon)
+            if not m or m.group(1) != pj["version"]:
+                fail(f"{name}: build.zig.zon version {m.group(1) if m else None!r} != plugin.json {pj['version']!r}")
+
+            mu = re.search(r'\.tokota = \.\{\s*\.url = "([^"]+)",\s*\.hash = "([^"]+)",', zon)
+            if not mu:
+                fail(f"{name}: tokota dependency not declared as url+hash")
+            else:
+                tokota_refs.add((mu.group(1), mu.group(2)))
 
         # 5. registry sync (missing entry = warning: a freshly scaffolded plugin
         #    legitimately has none until its first CI release)
@@ -85,9 +88,10 @@ def main() -> int:
         if r is None:
             print(f"WARN: {name}: missing from registry.json (released by CI on version bump)")
         else:
-            for k in ("version", "label", "description", "author", "risk_level"):
-                if r.get(k) != pj.get(k):
-                    fail(f"{name}: registry {k}={r.get(k)!r} != plugin.json {pj.get(k)!r}")
+            for k in ("version", "label", "description", "author", "risk_level", "type"):
+                default = "native" if k == "type" else None
+                if r.get(k, default) != pj.get(k, default):
+                    fail(f"{name}: registry {k}={r.get(k)!r} != plugin.json {pj.get(k, 'native' if k == 'type' else None)!r}")
             if r.get("methods") != pj.get("methods"):
                 fail(f"{name}: registry methods differ from plugin.json")
             tag = f"{name}-v{pj['version']}"

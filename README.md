@@ -49,6 +49,9 @@ ShallowEnd-Plugins builds on these open-source projects — thank you! Full lice
 | [base-z](https://github.com/kofi-q/base-z) | MIT | transitive dependency of Tokota |
 | [stb](https://github.com/nothings/stb) | Public Domain / MIT | vendored headers inside bof-launcher |
 | [linux-exploit-suggester](https://github.com/mzet-/linux-exploit-suggester) | GPL-3.0 | CVE knowledge base of `linux_exploit_suggester` |
+| [mysql2](https://github.com/sidorares/node-mysql2) | MIT | bundled into `mysql_driver` plugin (esbuild, in-memory load) |
+| [pg](https://github.com/brianc/node-postgres) | MIT | bundled into `pg_driver` plugin (esbuild, in-memory load) |
+| [esbuild](https://github.com/evanw/esbuild) | MIT | bundler for js-type driver plugins |
 
 ## Platform Matrix
 

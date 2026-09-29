@@ -38,6 +38,11 @@ jobs:
         with:
           go-version: '1.25.x'
 
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Check formatting
         run: |
           find plugins -path '*/bof-launcher' -prune -o \
@@ -68,6 +73,7 @@ jobs:
             [ -f "$dir/plugin.json" ] || continue
             name=$(python3 -c "import json;print(json.load(open('$dir/plugin.json'))['name'])")
             version=$(python3 -c "import json;print(json.load(open('$dir/plugin.json'))['version'])")
+            ptype=$(python3 -c "import json;print(json.load(open('$dir/plugin.json')).get('type','native'))")
             tag="${name}-v${version}"
 
             if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
@@ -75,7 +81,7 @@ jobs:
               continue
             fi
 
-            echo "== Building $name v$version ($tag)"
+            echo "== Building $name v$version ($tag, type=$ptype)"
             make -C "$dir" build-all
             ls -la "$dir/dist"
 
@@ -83,7 +89,7 @@ jobs:
               --title "$name v$version" \
               --generate-notes \
               --latest=false \
-              "$dir"/dist/*.node
+              "$dir"/dist/*
 
             echo "$dir" >> /tmp/built/list
           done

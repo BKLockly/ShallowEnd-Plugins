@@ -41,3 +41,13 @@ This repository vendors and redistributes third-party code. Their original licen
 - Upstream: https://github.com/kofi-q/base-z (branch `zig-0.16`)
 - License: MIT (see upstream `LICENSE`)
 - Resolved transitively by the zig package manager, pinned by content hash
+
+## mysql_driver (in `plugins/mysql_driver/`)
+
+- Bundles [mysql2](https://github.com/sidorares/node-mysql2) (MIT) and its npm dependency tree (MIT / ISC / Apache-2.0), built with [esbuild](https://github.com/evanw/esbuild) (MIT)
+- The bundle is a plain CJS build (platform-independent), loaded in-memory by the ShallowEnd payload; upstream licenses apply to the bundled code
+
+## pg_driver (in `plugins/pg_driver/`)
+
+- Bundles [pg](https://github.com/brianc/node-postgres) (MIT) and its npm dependency tree (MIT / ISC), built with [esbuild](https://github.com/evanw/esbuild) (MIT)
+- The bundle is a plain CJS build (platform-independent), loaded in-memory by the ShallowEnd payload; upstream licenses apply to the bundled code

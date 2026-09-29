@@ -32,7 +32,9 @@ ShallowEnd-Plugins/
     ├── file_compress/
     ├── file_decompress/
     ├── sensitive_search/
-    └── agentscan/             ← Zig 薄壳 + 内嵌 Go 静态二进制（上游 AgentScan，MIT）
+    ├── agentscan/             ← Zig 薄壳 + 内嵌 Go 静态二进制（上游 AgentScan，MIT）
+    ├── mysql_driver/          ← js 类型：mysql2 esbuild CJS bundle（数据库驱动，dbDriverLoad 推送）
+    └── pg_driver/             ← js 类型：pg esbuild CJS bundle（数据库驱动，dbDriverLoad 推送）
 ```
 
 ## 平台矩阵（已拍板，2026-09-08）
@@ -52,6 +54,15 @@ ShallowEnd-Plugins/
 - 客户端 `parsePlatform()` 对全平台已兼容；恢复某平台 = Makefile 加一行 + `parse_platform()` 正则已预留
 
 **bof 例外**：使用 musl libc（`x86_64-linux-musl` / `aarch64-linux-musl`），因其静态链接 bof-launcher。
+
+## js 类型插件（2026-09-29 新增）
+
+数据库驱动类插件（`mysql_driver` / `pg_driver`）是 **js 类型**：esbuild 把 npm 包打成平台无关的 CJS bundle（`type: "js"`，artifact 平台标识 `any`），由 ShallowEnd payload 的 `dbDriverLoad` 在目标机 Node 内存中加载（`new Function('module','exports','require')` 语义）。与 native 插件的差异：
+
+- 无 Zig 工程（不建 `build.zig.zon`，tokota 钉版检查不适用）；依赖走 `package.json`（esbuild devDependency + 上游 npm 包 dependency，版本范围钉 minor）
+- `Makefile build-all` = `npm install` + esbuild bundle 到 `dist/<name>.js`；`make test` 用 node 校验导出形状（mysql → `createConnection`，pg → `Client`）
+- CI 同一条流水线：`build-all` → release 上传 `dist/*`（含 .js）→ `update_registry.py` 按后缀识别 `.js` 为 `any` 平台
+- bundle 是第三方 npm 代码的再分发，必须在 `THIRD_PARTY.md` 登记上游与许可证
 
 ## 铁律
 

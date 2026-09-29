@@ -1,0 +1,15 @@
+{
+  "name": "shallowend-plugin-mysql_driver",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --platform=node --format=cjs --outfile=dist/mysql_driver.js --external:aws-sdk --external:pg-native"
+  },
+  "dependencies": {
+    "mysql2": "^3.14.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.5"
+  }
+}

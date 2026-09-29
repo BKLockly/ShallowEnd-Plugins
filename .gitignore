@@ -12,3 +12,4 @@ __pycache__/
 
 # Zig 包管理器物化目录（fetch 依赖的本地副本）
 zig-pkg/
+node_modules/

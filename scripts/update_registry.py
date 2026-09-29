@@ -47,12 +47,15 @@ def scan_artifacts(artifacts_dir: str, release_url: str) -> dict:
     """Scan artifacts dir for .node files, keyed by platform."""
     artifacts = {}
     for fname in sorted(os.listdir(artifacts_dir)):
-        if not fname.endswith(".node"):
+        if not (fname.endswith(".node") or fname.endswith(".js")):
             continue
         filepath = os.path.join(artifacts_dir, fname)
         with open(filepath, "rb") as f:
             sha256 = hashlib.sha256(f.read()).hexdigest()
-        platform = parse_platform(fname)
+        if fname.endswith(".js"):
+            platform = "any"  # js 插件平台无关
+        else:
+            platform = parse_platform(fname)
         tag = release_url.rstrip("/").rsplit("/", 1)[-1]
         base = release_url.rstrip("/").replace(f"/releases/tag/{tag}", "")
         artifacts[platform] = {
@@ -81,7 +84,7 @@ def main():
 
     artifacts = scan_artifacts(args.artifacts_dir, args.release_url)
     if not artifacts:
-        print(f"ERROR: no .node artifacts found in {args.artifacts_dir}")
+        print(f"ERROR: no .node/.js artifacts found in {args.artifacts_dir}")
         sys.exit(1)
 
     print(f"Found {len(artifacts)} platform variants for {args.name} v{args.version}:")
@@ -95,6 +98,7 @@ def main():
         "version": args.version,
         "author": plugin_meta.get("author", ""),
         "risk_level": plugin_meta.get("risk_level", "low"),
+        "type": plugin_meta.get("type", "native"),
         "repo_url": args.repo_url,
         "release_url": args.release_url,
         "methods": plugin_meta.get("methods", []),

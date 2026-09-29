@@ -1,0 +1,10 @@
+{
+  "name": "pg_driver",
+  "label": "PostgreSQL 驱动",
+  "description": "PostgreSQL 数据库驱动（pg CJS bundle），供推送目标机内存加载（dbDriverLoad）",
+  "version": "1.0.0",
+  "author": "BKLockly",
+  "risk_level": "low",
+  "type": "js",
+  "methods": []
+}

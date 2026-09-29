@@ -1,0 +1,10 @@
+{
+  "name": "mysql_driver",
+  "label": "MySQL 驱动",
+  "description": "MySQL 数据库驱动（mysql2 CJS bundle），供推送目标机内存加载（dbDriverLoad）",
+  "version": "1.0.0",
+  "author": "BKLockly",
+  "risk_level": "low",
+  "type": "js",
+  "methods": []
+}

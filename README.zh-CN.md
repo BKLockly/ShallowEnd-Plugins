@@ -49,6 +49,9 @@ ShallowEnd-Plugins/
 | [base-z](https://github.com/kofi-q/base-z) | MIT | Tokota 传递依赖 |
 | [stb](https://github.com/nothings/stb) | Public Domain / MIT | bof-launcher 内 vendored 头文件 |
 | [linux-exploit-suggester](https://github.com/mzet-/linux-exploit-suggester) | GPL-3.0 | `linux_exploit_suggester` 的 CVE 知识库 |
+| [mysql2](https://github.com/sidorares/node-mysql2) | MIT | `mysql_driver` 插件 bundle（esbuild 打包，目标机内存加载） |
+| [pg](https://github.com/brianc/node-postgres) | MIT | `pg_driver` 插件 bundle（esbuild 打包，目标机内存加载） |
+| [esbuild](https://github.com/evanw/esbuild) | MIT | js 类型驱动插件的打包器 |
 
 ## 平台矩阵
 
