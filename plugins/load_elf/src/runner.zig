@@ -33,6 +33,33 @@ pub fn isElf(bytes: []const u8) bool {
     return bytes.len >= 4 and std.mem.eql(u8, bytes[0..4], "\x7fELF");
 }
 
+/// 决议 argv[0]：显式 argv0 参数 > 上传文件名 basename > "elf" 兜底。
+/// busybox 等多合一二进制按 argv[0] 分发 applet，"elf" 会报 applet not found；
+/// 上传文件名保留原语义（sleep/wget 等按名自识别），显式参数优先级最高。
+/// 返回 dupeZ 字符串，调用方持有并负责 free。
+pub fn resolveArgv0(allocator: std.mem.Allocator, explicit: ?[]const u8, filename: ?[]const u8) ![:0]u8 {
+    const blank = struct {
+        fn is(s: []const u8) bool {
+            return std.mem.trim(u8, s, " \t\r\n").len == 0;
+        }
+    };
+    const candidate: []const u8 = blk: {
+        if (explicit) |e| {
+            // 空白显式值视为未提供
+            if (!blank.is(e)) break :blk std.mem.trim(u8, e, " \t\r\n");
+        }
+        if (filename) |f| {
+            if (!blank.is(f)) {
+                // 容忍完整路径，取最后一段
+                const base = if (std.mem.lastIndexOfScalar(u8, f, '/')) |i| f[i + 1 ..] else f;
+                if (base.len > 0) break :blk base;
+            }
+        }
+        break :blk "elf";
+    };
+    return allocator.dupeZ(u8, candidate);
+}
+
 /// 把 args 文本按空白拆成 argv token。不经 shell，引号按字面量处理。
 pub fn splitArgs(allocator: std.mem.Allocator, text: []const u8) ![][]const u8 {
     var list: std.ArrayList([]const u8) = .empty;

@@ -36,6 +36,13 @@ pub fn execElf(call: tokota.Call) !tokota.Promise {
     const args_text = try optString(call, params, "args", allocator);
     defer if (args_text) |t| allocator.free(t);
 
+    // argv[0] 决议见 runner.resolveArgv0：显式参数 > 文件名（新 payload 契约
+    // 保留在 <key>_name）> "elf"。busybox 多合一目标机必须匹配 applet 名。
+    const argv0_explicit = try optString(call, params, "argv0", allocator);
+    defer if (argv0_explicit) |t| allocator.free(t);
+    const elf_filename = try optString(call, params, "elf_file_name", allocator);
+    defer if (elf_filename) |t| allocator.free(t);
+
     var timeout_s: u32 = runner.default_run_timeout_s;
     if (params.getT("timeout", f64)) |fv| {
         if (fv > 0) timeout_s = @intFromFloat(@min(fv, runner.max_run_timeout_s));
@@ -47,7 +54,7 @@ pub fn execElf(call: tokota.Call) !tokota.Promise {
 
     // 耗时的 fork+waitpid 放到 libuv 线程池（AsyncWorker）执行，导出 Promise，
     // 不阻塞目标机 Node 事件循环；fd 创建（memfd/降级 tmpfile）留在同步段。
-    const task = try ElfTask.prepare(allocator, elf_bytes, args_text, timeout_s);
+    const task = try ElfTask.prepare(allocator, elf_bytes, args_text, argv0_explicit, elf_filename, timeout_s);
     errdefer task.deinit(false);
 
     const promise, const deferred = try call.env.promise();
@@ -77,8 +84,15 @@ const ElfTask = struct {
     output: ?[]const u8 = null,
 
     // 同步段：创建承载 ELF 的 fd（memfd 优先，被禁时降级匿名 tmpfile）、
-    // 组装 argv/envp。argv[0] 固定 "elf"（文件名已被 payload 的 Buffer 覆盖）。
-    fn prepare(allocator: std.mem.Allocator, elf_bytes: []const u8, args_text: ?[]const u8, timeout_s: u32) !*ElfTask {
+    // 组装 argv/envp。argv[0] 决议顺序见 runner.resolveArgv0。
+    fn prepare(
+        allocator: std.mem.Allocator,
+        elf_bytes: []const u8,
+        args_text: ?[]const u8,
+        argv0_explicit: ?[]const u8,
+        elf_filename: ?[]const u8,
+        timeout_s: u32,
+    ) !*ElfTask {
         const linux = std.os.linux;
 
         const fd, const mode = blk: {
@@ -96,10 +110,12 @@ const ElfTask = struct {
             allocator.free(arg_tokens);
         }
 
-        // null 结尾 argv：["elf", tokens..., null]
+        // null 结尾 argv：[argv0, tokens..., null]
         var argv = try allocator.allocSentinel(?[*:0]const u8, arg_tokens.len + 1, null);
         errdefer allocator.free(argv);
-        argv[0] = (try allocator.dupeZ(u8, "elf")).ptr;
+        const argv0 = try runner.resolveArgv0(allocator, argv0_explicit, elf_filename);
+        errdefer allocator.free(argv0);
+        argv[0] = argv0.ptr;
         for (arg_tokens, 0..) |t, i| argv[i + 1] = (try allocator.dupeZ(u8, t)).ptr;
 
         const envp = try runner.buildEnvp(allocator);

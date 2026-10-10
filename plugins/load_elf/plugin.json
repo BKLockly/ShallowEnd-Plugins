@@ -2,7 +2,7 @@
   "name": "load_elf",
   "label": "内存 ELF 加载执行",
   "description": "上传 ELF 二进制到目标机内存执行：memfd_create + execveat(AT_EMPTY_PATH) 零落地，memfd 不可用时自动降级匿名临时文件（写满即 unlink，被杀也无残留）；libuv 线程池异步执行（返回 Promise），不阻塞目标机 Node 事件循环",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "BKLockly",
   "risk_level": "high",
   "methods": [
@@ -24,6 +24,14 @@
           "label": "命令行参数（空白分隔，不经 shell）",
           "required": false,
           "default": ""
+        },
+        {
+          "name": "argv0",
+          "type": "text",
+          "label": "进程名 argv[0]",
+          "required": false,
+          "default": "",
+          "description": "传给二进制的 argv[0]；缺省用上传文件名，都没有则用 elf。busybox 等多合一二进制按 argv[0] 分发功能，需填 busybox 并把子命令放进参数"
         },
         {
           "name": "timeout",

@@ -38,6 +38,24 @@ test "stripAnsi keeps plain text intact" {
     try std.testing.expectEqualStrings("plain [INFO] text \x07 bell", s);
 }
 
+test "resolveArgv0 precedence: explicit > filename basename > elf" {
+    const allocator = std.testing.allocator;
+    const cases = .{
+        .{ @as(?[]const u8, "busybox"), @as(?[]const u8, "/tmp/up/busybox-arm64"), "busybox" }, // 显式参数最高优先
+        .{ null, "/tmp/up/sleep", "sleep" }, // 缺省取文件名 basename
+        .{ null, "wget", "wget" }, // 纯文件名原样
+        .{ "", null, "elf" }, // 双缺省兜底
+        .{ null, null, "elf" },
+        .{ null, "/a/b/", "elf" }, // basename 为空（目录斜杠结尾）回退兜底
+        .{ "  ", "/a/b/sh", "sh" }, // 空白显式值视为未提供，落到文件名
+    };
+    inline for (cases) |c| {
+        const got = try runner.resolveArgv0(allocator, c[0], c[1]);
+        defer allocator.free(got);
+        try std.testing.expectEqualStrings(c[2], got);
+    }
+}
+
 test "buildEnvp appends NO_COLOR and null-terminates" {
     const envp = try runner.buildEnvp(std.testing.allocator);
     defer std.testing.allocator.free(envp);
@@ -60,9 +78,9 @@ test "buildEnvp appends NO_COLOR and null-terminates" {
 // ---- 执行链（fork + memfd + execveat）：仅 Linux 真跑，CI 在 ubuntu 验证 ----
 
 const LinuxCtx = struct {
-    fn buildArgv(allocator: std.mem.Allocator, tokens: []const []const u8) ![:null]?[*:0]const u8 {
+    fn buildArgv(allocator: std.mem.Allocator, argv0: []const u8, tokens: []const []const u8) ![:null]?[*:0]const u8 {
         var argv = try allocator.allocSentinel(?[*:0]const u8, tokens.len + 1, null);
-        argv[0] = (try allocator.dupeZ(u8, "elf")).ptr;
+        argv[0] = (try allocator.dupeZ(u8, argv0)).ptr;
         for (tokens, 0..) |t, i| argv[i + 1] = (try allocator.dupeZ(u8, t)).ptr;
         return argv;
     }
@@ -88,7 +106,7 @@ test "execFd runs a binary from memfd and collects output" {
 
     const fd = try runner.createMemfd(bin);
     defer _ = linux.close(fd);
-    const argv = try LinuxCtx.buildArgv(allocator, &.{ "-c", "echo memfd-ok" });
+    const argv = try LinuxCtx.buildArgv(allocator, "sh", &.{ "-c", "echo memfd-ok" });
     defer LinuxCtx.freeArgv(allocator, argv);
     const envp = try runner.buildEnvp(allocator);
     defer allocator.free(envp);
@@ -111,7 +129,7 @@ test "execFd falls back to execve procfs path when execveat unavailable" {
 
     const fd = try runner.createMemfd("not an elf at all\n");
     defer _ = std.os.linux.close(fd);
-    const argv = try LinuxCtx.buildArgv(allocator, &.{});
+    const argv = try LinuxCtx.buildArgv(allocator, "sh", &.{});
     defer LinuxCtx.freeArgv(allocator, argv);
     const envp = try runner.buildEnvp(allocator);
     defer allocator.free(envp);
@@ -132,7 +150,7 @@ test "execFd reports timeout and kills the process" {
 
     const fd = try runner.createMemfd(bin);
     defer _ = linux.close(fd);
-    const argv = try LinuxCtx.buildArgv(allocator, &.{"30"});
+    const argv = try LinuxCtx.buildArgv(allocator, "sleep", &.{"30"});
     defer LinuxCtx.freeArgv(allocator, argv);
     const envp = try runner.buildEnvp(allocator);
     defer allocator.free(envp);
