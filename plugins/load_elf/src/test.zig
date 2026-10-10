@@ -68,7 +68,8 @@ const LinuxCtx = struct {
     }
     fn freeArgv(allocator: std.mem.Allocator, argv: [:null]?[*:0]const u8) void {
         for (argv) |a| {
-            if (a) |z| allocator.free(@as([*:0]u8, @constCast(z))[0..std.mem.len(z)]);
+            // span 恢复 [:0]u8 sentinel 形态，free 才能按 len+1 释放（dupeZ 分配量）
+            if (a) |z| allocator.free(std.mem.span(@constCast(z)));
         }
         allocator.free(argv);
     }
@@ -102,20 +103,23 @@ test "execFd runs a binary from memfd and collects output" {
 
 test "execFd falls back to execve procfs path when execveat unavailable" {
     // 覆盖路径不可直接模拟（execveat 在 CI 内核必然可用），
-    // 本用例确保同一条 exec 链对 /proc/self/fd/N 形式也成立：
-    // 跳过 execveat 直接构造不可行，退化为验证非 ELF 触发 126 降级链全败。
+    // 本用例确保 exec 降级链全败时的 126 语义成立：喂无 shebang 的纯文本
+    // （带 #! 会被内核 binfmt_script 拦截而非 ENOEXEC），execveat 与
+    // execve(/proc/self/fd/N) 均返回 ENOEXEC → exit 126。
     if (comptime !runner.is_linux) return error.SkipZigTest;
     const allocator = std.testing.allocator;
 
-    const fd = try runner.createMemfd("#!/bin/sh\necho not-an-elf\n");
+    const fd = try runner.createMemfd("not an elf at all\n");
     defer _ = std.os.linux.close(fd);
     const argv = try LinuxCtx.buildArgv(allocator, &.{});
     defer LinuxCtx.freeArgv(allocator, argv);
     const envp = try runner.buildEnvp(allocator);
     defer allocator.free(envp);
 
-    // 非 ELF 内容：execveat 与 execve(/proc/self/fd/N) 均返回 ENOEXEC → exit 126
-    try std.testing.expectError(error.ExecFailed, runner.execFd(allocator, fd, argv, envp, 30));
+    // 126 分支返回前不持有 output，但正常返回路径的 result 须先释放再断言
+    const outcome = runner.execFd(allocator, fd, argv, envp, 30);
+    if (outcome) |r| allocator.free(r.output) else |_| {}
+    try std.testing.expectError(error.ExecFailed, outcome);
 }
 
 test "execFd reports timeout and kills the process" {

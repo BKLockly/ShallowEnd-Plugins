@@ -126,7 +126,8 @@ const ElfTask = struct {
             if (!resolved) allo.free(o);
         }
         for (self.argv) |a| {
-            if (a) |z| allo.free(@as([*:0]u8, @constCast(z))[0..std.mem.len(z)]);
+            // span 恢复 [:0]u8 sentinel 形态，free 才能按 len+1 释放（dupeZ 分配量）
+            if (a) |z| allo.free(std.mem.span(@constCast(z)));
         }
         allo.free(self.argv);
         allo.free(self.envp);

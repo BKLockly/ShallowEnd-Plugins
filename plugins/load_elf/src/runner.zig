@@ -126,7 +126,8 @@ pub fn createAnonFile(bytes: []const u8) !std.posix.fd_t {
     var name_buf: [64]u8 = undefined;
     const path = std.fmt.bufPrintZ(&name_buf, "/tmp/.loadelf-{x}.bin", .{nextSeed()}) catch
         return error.TempPathOverflow;
-    const rc = linux.openat(linux.AT.FDCWD, path, .{ .ACCMODE = .WRONLY, .CREAT = true, .EXCL = true }, 0o700);
+    // RDWR 与 memfd_create 语义对齐（fd 后续仅供 execveat；测试也会读回校验）
+    const rc = linux.openat(linux.AT.FDCWD, path, .{ .ACCMODE = .RDWR, .CREAT = true, .EXCL = true }, 0o700);
     if (@as(isize, @bitCast(rc)) < 0) return error.TempFileUnavailable;
     const fd: std.posix.fd_t = @intCast(rc);
     errdefer _ = linux.close(fd);
