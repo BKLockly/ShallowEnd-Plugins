@@ -1,0 +1,37 @@
+{
+  "name": "load_elf",
+  "label": "内存 ELF 加载执行",
+  "description": "上传 ELF 二进制到目标机内存执行：memfd_create + execveat(AT_EMPTY_PATH) 零落地，memfd 不可用时自动降级匿名临时文件（写满即 unlink，被杀也无残留）；libuv 线程池异步执行（返回 Promise），不阻塞目标机 Node 事件循环",
+  "version": "0.1.0",
+  "author": "BKLockly",
+  "risk_level": "high",
+  "methods": [
+    {
+      "name": "execElf",
+      "label": "执行 ELF",
+      "description": "上传 ELF 二进制并在目标机内存中执行，收集 stdout/stderr 回传",
+      "params": [
+        {
+          "name": "elf_file",
+          "type": "file",
+          "label": "ELF 文件",
+          "required": true,
+          "description": "要执行的 ELF 二进制（建议静态编译；动态链接的二进制需目标机存在对应 so）"
+        },
+        {
+          "name": "args",
+          "type": "text",
+          "label": "命令行参数（空白分隔，不经 shell）",
+          "required": false,
+          "default": ""
+        },
+        {
+          "name": "timeout",
+          "type": "number",
+          "label": "超时秒数（默认 60，上限 1700）",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
