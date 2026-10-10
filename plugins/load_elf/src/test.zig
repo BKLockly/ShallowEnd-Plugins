@@ -68,18 +68,21 @@ const LinuxCtx = struct {
     }
     fn freeArgv(allocator: std.mem.Allocator, argv: [:null]?[*:0]const u8) void {
         for (argv) |a| {
-            if (a) |z| allocator.free(@as([*:0]u8, @constCast(z.ptr))[0..std.mem.len(z.ptr)]);
+            if (a) |z| allocator.free(@as([*:0]u8, @constCast(z))[0..std.mem.len(z)]);
         }
         allocator.free(argv);
     }
 };
+
+// 0.16 起 std.fs.cwd() 移除，文件读取走 std.Io.Dir + Io 实例
+var test_threaded: std.Io.Threaded = .init_single_threaded;
 
 test "execFd runs a binary from memfd and collects output" {
     if (comptime !runner.is_linux) return error.SkipZigTest;
     const allocator = std.testing.allocator;
     const linux = std.os.linux;
 
-    const bin = try std.fs.cwd().readFileAlloc(allocator, "/bin/sh", 8 << 20);
+    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .limited(8 << 20));
     defer allocator.free(bin);
 
     const fd = try runner.createMemfd(bin);
@@ -120,7 +123,7 @@ test "execFd reports timeout and kills the process" {
     const allocator = std.testing.allocator;
     const linux = std.os.linux;
 
-    const bin = try std.fs.cwd().readFileAlloc(allocator, "/bin/sleep", 8 << 20);
+    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sleep", allocator, .limited(8 << 20));
     defer allocator.free(bin);
 
     const fd = try runner.createMemfd(bin);
@@ -142,9 +145,11 @@ test "createAnonFile leaves no path behind" {
 
     const fd = try runner.createAnonFile("data");
     defer _ = std.os.linux.close(fd);
-    // fd 可读回内容（unlink 后仍持有 inode）
+    // fd 可读回内容（unlink 后仍持有 inode）；0.16 posix 无 pread，lseek+read 等价
+    const linux = std.os.linux;
+    if (linux.errno(linux.lseek(fd, 0, linux.SEEK.SET)) != .SUCCESS) return error.Unexpected;
     var buf: [8]u8 = undefined;
-    const n = try std.posix.pread(fd, &buf, 0);
+    const n = try std.posix.read(fd, &buf);
     try std.testing.expectEqualStrings("data", buf[0..n]);
     _ = allocator;
 }
