@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-09-29T06:00:08Z",
+  "updated_at": "2026-10-10T18:49:28Z",
   "plugins": [
     {
       "name": "bof",
@@ -86,17 +86,17 @@
     {
       "name": "file_compress",
       "label": "文件压缩",
-      "description": "使用 Gzip 压缩单个文件，纯 Zig 实现，无需外部命令",
-      "version": "0.2.0",
+      "description": "使用 Gzip 流式压缩文件，支持将目录递归打包为 tar.gz，纯 Zig 实现，无需外部命令",
+      "version": "0.3.0",
       "author": "BKLockly",
       "risk_level": "low",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_compress-v0.2.0",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_compress-v0.3.0",
       "methods": [
         {
           "name": "compress",
           "label": "文件压缩",
-          "description": "将文件压缩为 .gz 格式",
+          "description": "将文件流式压缩为 .gz 格式（支持任意大小文件）",
           "params": [
             {
               "name": "source_path",
@@ -111,6 +111,69 @@
               "label": "目标路径",
               "required": true,
               "description": "输出的 .gz 文件路径"
+            },
+            {
+              "name": "level",
+              "type": "select",
+              "label": "压缩级别",
+              "required": false,
+              "options": [
+                {
+                  "label": "最快 (level 1)",
+                  "value": "fastest"
+                },
+                {
+                  "label": "默认 (level 6)",
+                  "value": "default"
+                },
+                {
+                  "label": "最小 (level 9)",
+                  "value": "best"
+                }
+              ],
+              "description": "gzip 压缩级别，默认 default"
+            }
+          ]
+        },
+        {
+          "name": "compressDir",
+          "label": "目录打包",
+          "description": "将整个目录递归打包为 .tar.gz（流式，保留权限与符号链接，跳过管道/套接字/设备文件）",
+          "params": [
+            {
+              "name": "source_path",
+              "type": "text",
+              "label": "源目录",
+              "required": true,
+              "description": "要打包的目录路径"
+            },
+            {
+              "name": "target_path",
+              "type": "text",
+              "label": "目标路径",
+              "required": true,
+              "description": "输出的 .tar.gz 文件路径"
+            },
+            {
+              "name": "level",
+              "type": "select",
+              "label": "压缩级别",
+              "required": false,
+              "options": [
+                {
+                  "label": "最快 (level 1)",
+                  "value": "fastest"
+                },
+                {
+                  "label": "默认 (level 6)",
+                  "value": "default"
+                },
+                {
+                  "label": "最小 (level 9)",
+                  "value": "best"
+                }
+              ],
+              "description": "gzip 压缩级别，默认 fastest（打包偏重传输速度）"
             }
           ]
         }
@@ -133,17 +196,17 @@
     {
       "name": "file_decompress",
       "label": "文件解压",
-      "description": "使用 Gzip 解压 .gz 文件为源文件，纯 Zig 实现，无需外部命令",
-      "version": "0.2.1",
+      "description": "使用 Gzip 流式解压 .gz 文件，支持将 tar.gz 归档解包为目录，纯 Zig 实现，无需外部命令",
+      "version": "0.3.0",
       "author": "BKLockly",
       "risk_level": "low",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_decompress-v0.2.1",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_decompress-v0.3.0",
       "methods": [
         {
           "name": "decompress",
           "label": "文件解压",
-          "description": "将 .gz 文件解压为源文件",
+          "description": "将 .gz 文件流式解压为源文件（支持任意大小文件）",
           "params": [
             {
               "name": "source_path",
@@ -158,6 +221,27 @@
               "label": "目标路径",
               "required": true,
               "description": "输出的源文件路径"
+            }
+          ]
+        },
+        {
+          "name": "decompressArchive",
+          "label": "归档解包",
+          "description": "将 .tar.gz 归档解包到目标目录（保留可执行位，已存在文件跳过并在结果中列明）",
+          "params": [
+            {
+              "name": "source_path",
+              "type": "text",
+              "label": "归档文件",
+              "required": true,
+              "description": "要解包的 .tar.gz 文件路径"
+            },
+            {
+              "name": "target_path",
+              "type": "text",
+              "label": "目标目录",
+              "required": true,
+              "description": "解包输出的目标目录路径（不存在会自动创建）"
             }
           ]
         }
