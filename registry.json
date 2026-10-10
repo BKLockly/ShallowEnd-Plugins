@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-10-10T19:24:04Z",
+  "updated_at": "2026-10-10T19:25:28Z",
   "plugins": [
     {
       "name": "bof",
@@ -688,15 +688,15 @@
       "artifacts": {
         "linux-arm64": {
           "filename": "load_elf-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.0/load_elf-linux-arm64.node",
-          "sha256": "2ab197faeefa7cc1f5aefe25efc1d528b2f423d62c9b61e13df4b65c7972428e",
-          "size": 164952
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.1/load_elf-linux-arm64.node",
+          "sha256": "b9e64e6b6a8c066e68f283b0269ea8ac862cd4510e7ab7295055a8a09c9a83bc",
+          "size": 165944
         },
         "linux-x64": {
           "filename": "load_elf-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.0/load_elf-linux-x64.node",
-          "sha256": "2e128abbf587f77cb23738294c7dc20c8f247056eb6f05cab2d18beb05ef7e13",
-          "size": 167528
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.1/load_elf-linux-x64.node",
+          "sha256": "ee7b1abfdae33cb630cb9bdfc52a77685fc97037dc9040948618501f4f8df112",
+          "size": 168696
         }
       }
     }
