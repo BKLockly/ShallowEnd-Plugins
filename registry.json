@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-10-10T18:49:28Z",
+  "updated_at": "2026-10-10T19:13:39Z",
   "plugins": [
     {
       "name": "bof",
@@ -80,184 +80,6 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.0.1/docker_detect-linux-x64.node",
           "sha256": "18a409384048d57c81b1eda04e93036d44bfe03d34116699097a55bdf422ad19",
           "size": 21280
-        }
-      }
-    },
-    {
-      "name": "file_compress",
-      "label": "文件压缩",
-      "description": "使用 Gzip 流式压缩文件，支持将目录递归打包为 tar.gz，纯 Zig 实现，无需外部命令",
-      "version": "0.3.0",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_compress-v0.3.0",
-      "methods": [
-        {
-          "name": "compress",
-          "label": "文件压缩",
-          "description": "将文件流式压缩为 .gz 格式（支持任意大小文件）",
-          "params": [
-            {
-              "name": "source_path",
-              "type": "text",
-              "label": "源文件",
-              "required": true,
-              "description": "要压缩的文件路径"
-            },
-            {
-              "name": "target_path",
-              "type": "text",
-              "label": "目标路径",
-              "required": true,
-              "description": "输出的 .gz 文件路径"
-            },
-            {
-              "name": "level",
-              "type": "select",
-              "label": "压缩级别",
-              "required": false,
-              "options": [
-                {
-                  "label": "最快 (level 1)",
-                  "value": "fastest"
-                },
-                {
-                  "label": "默认 (level 6)",
-                  "value": "default"
-                },
-                {
-                  "label": "最小 (level 9)",
-                  "value": "best"
-                }
-              ],
-              "description": "gzip 压缩级别，默认 default"
-            }
-          ]
-        },
-        {
-          "name": "compressDir",
-          "label": "目录打包",
-          "description": "将整个目录递归打包为 .tar.gz（流式，保留权限与符号链接，跳过管道/套接字/设备文件）",
-          "params": [
-            {
-              "name": "source_path",
-              "type": "text",
-              "label": "源目录",
-              "required": true,
-              "description": "要打包的目录路径"
-            },
-            {
-              "name": "target_path",
-              "type": "text",
-              "label": "目标路径",
-              "required": true,
-              "description": "输出的 .tar.gz 文件路径"
-            },
-            {
-              "name": "level",
-              "type": "select",
-              "label": "压缩级别",
-              "required": false,
-              "options": [
-                {
-                  "label": "最快 (level 1)",
-                  "value": "fastest"
-                },
-                {
-                  "label": "默认 (level 6)",
-                  "value": "default"
-                },
-                {
-                  "label": "最小 (level 9)",
-                  "value": "best"
-                }
-              ],
-              "description": "gzip 压缩级别，默认 fastest（打包偏重传输速度）"
-            }
-          ]
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "file_compress-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.2.0/file_compress-linux-arm64.node",
-          "sha256": "320337ce33cc1fdbfcfe12c266727841341225a5964f1793b395a9da8e7d6004",
-          "size": 38752
-        },
-        "linux-x64": {
-          "filename": "file_compress-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.2.0/file_compress-linux-x64.node",
-          "sha256": "7d296851de1114b9f0b9516e1c457509e3533bbd88ea2b96672c7a56287288e2",
-          "size": 39760
-        }
-      }
-    },
-    {
-      "name": "file_decompress",
-      "label": "文件解压",
-      "description": "使用 Gzip 流式解压 .gz 文件，支持将 tar.gz 归档解包为目录，纯 Zig 实现，无需外部命令",
-      "version": "0.3.0",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_decompress-v0.3.0",
-      "methods": [
-        {
-          "name": "decompress",
-          "label": "文件解压",
-          "description": "将 .gz 文件流式解压为源文件（支持任意大小文件）",
-          "params": [
-            {
-              "name": "source_path",
-              "type": "text",
-              "label": "源文件",
-              "required": true,
-              "description": "要解压的 .gz 文件路径"
-            },
-            {
-              "name": "target_path",
-              "type": "text",
-              "label": "目标路径",
-              "required": true,
-              "description": "输出的源文件路径"
-            }
-          ]
-        },
-        {
-          "name": "decompressArchive",
-          "label": "归档解包",
-          "description": "将 .tar.gz 归档解包到目标目录（保留可执行位，已存在文件跳过并在结果中列明）",
-          "params": [
-            {
-              "name": "source_path",
-              "type": "text",
-              "label": "归档文件",
-              "required": true,
-              "description": "要解包的 .tar.gz 文件路径"
-            },
-            {
-              "name": "target_path",
-              "type": "text",
-              "label": "目标目录",
-              "required": true,
-              "description": "解包输出的目标目录路径（不存在会自动创建）"
-            }
-          ]
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "file_decompress-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_decompress-v0.2.1/file_decompress-linux-arm64.node",
-          "sha256": "352287ced810e805ba0bf4f760d24bf98e5ef74d5749f21eeb3932dd6844176e",
-          "size": 38736
-        },
-        "linux-x64": {
-          "filename": "file_decompress-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_decompress-v0.2.1/file_decompress-linux-x64.node",
-          "sha256": "c9a3e54ec71f84c07d67c8692b1df202ea8596779d6c4109635373bb9a817b53",
-          "size": 40704
         }
       }
     },
@@ -633,6 +455,240 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.2.0/agentscan-linux-x64.node",
           "sha256": "bf704d566fd5baccab8c8b63e7d610ff91b11a6e66bca0c66cf2a44e95b46880",
           "size": 4045848
+        }
+      }
+    },
+    {
+      "name": "file_compress",
+      "label": "文件压缩",
+      "description": "使用 Gzip 流式压缩文件，支持将目录递归打包为 tar.gz，纯 Zig 实现，无需外部命令",
+      "version": "0.3.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_compress-v0.3.0",
+      "methods": [
+        {
+          "name": "compress",
+          "label": "文件压缩",
+          "description": "将文件流式压缩为 .gz 格式（支持任意大小文件）",
+          "params": [
+            {
+              "name": "source_path",
+              "type": "text",
+              "label": "源文件",
+              "required": true,
+              "description": "要压缩的文件路径"
+            },
+            {
+              "name": "target_path",
+              "type": "text",
+              "label": "目标路径",
+              "required": true,
+              "description": "输出的 .gz 文件路径"
+            },
+            {
+              "name": "level",
+              "type": "select",
+              "label": "压缩级别",
+              "required": false,
+              "options": [
+                {
+                  "label": "最快 (level 1)",
+                  "value": "fastest"
+                },
+                {
+                  "label": "默认 (level 6)",
+                  "value": "default"
+                },
+                {
+                  "label": "最小 (level 9)",
+                  "value": "best"
+                }
+              ],
+              "description": "gzip 压缩级别，默认 default"
+            }
+          ]
+        },
+        {
+          "name": "compressDir",
+          "label": "目录打包",
+          "description": "将整个目录递归打包为 .tar.gz（流式，保留权限与符号链接，跳过管道/套接字/设备文件）",
+          "params": [
+            {
+              "name": "source_path",
+              "type": "text",
+              "label": "源目录",
+              "required": true,
+              "description": "要打包的目录路径"
+            },
+            {
+              "name": "target_path",
+              "type": "text",
+              "label": "目标路径",
+              "required": true,
+              "description": "输出的 .tar.gz 文件路径"
+            },
+            {
+              "name": "level",
+              "type": "select",
+              "label": "压缩级别",
+              "required": false,
+              "options": [
+                {
+                  "label": "最快 (level 1)",
+                  "value": "fastest"
+                },
+                {
+                  "label": "默认 (level 6)",
+                  "value": "default"
+                },
+                {
+                  "label": "最小 (level 9)",
+                  "value": "best"
+                }
+              ],
+              "description": "gzip 压缩级别，默认 fastest（打包偏重传输速度）"
+            }
+          ]
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "file_compress-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.3.0/file_compress-linux-arm64.node",
+          "sha256": "d12c9d6c3c85398e850f3032e32773909c4ffbc9aec960858bbc496e050fe9b0",
+          "size": 189800
+        },
+        "linux-x64": {
+          "filename": "file_compress-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.3.0/file_compress-linux-x64.node",
+          "sha256": "679cda97da69459e5121d780821a6dbdacdfed8c5a90575978736bdf89e6d81b",
+          "size": 194312
+        }
+      }
+    },
+    {
+      "name": "file_decompress",
+      "label": "文件解压",
+      "description": "使用 Gzip 流式解压 .gz 文件，支持将 tar.gz 归档解包为目录，纯 Zig 实现，无需外部命令",
+      "version": "0.3.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_decompress-v0.3.0",
+      "methods": [
+        {
+          "name": "decompress",
+          "label": "文件解压",
+          "description": "将 .gz 文件流式解压为源文件（支持任意大小文件）",
+          "params": [
+            {
+              "name": "source_path",
+              "type": "text",
+              "label": "源文件",
+              "required": true,
+              "description": "要解压的 .gz 文件路径"
+            },
+            {
+              "name": "target_path",
+              "type": "text",
+              "label": "目标路径",
+              "required": true,
+              "description": "输出的源文件路径"
+            }
+          ]
+        },
+        {
+          "name": "decompressArchive",
+          "label": "归档解包",
+          "description": "将 .tar.gz 归档解包到目标目录（保留可执行位，已存在文件跳过并在结果中列明）",
+          "params": [
+            {
+              "name": "source_path",
+              "type": "text",
+              "label": "归档文件",
+              "required": true,
+              "description": "要解包的 .tar.gz 文件路径"
+            },
+            {
+              "name": "target_path",
+              "type": "text",
+              "label": "目标目录",
+              "required": true,
+              "description": "解包输出的目标目录路径（不存在会自动创建）"
+            }
+          ]
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "file_decompress-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_decompress-v0.3.0/file_decompress-linux-arm64.node",
+          "sha256": "acad59dc238de98a11d7cf03f12648a47dc762804eae5ea268ee1c8c251d2603",
+          "size": 187840
+        },
+        "linux-x64": {
+          "filename": "file_decompress-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_decompress-v0.3.0/file_decompress-linux-x64.node",
+          "sha256": "ee5a483e4d6fa4354690d5fbf36866a094334bd8db96de78feba6b12606f323c",
+          "size": 192960
+        }
+      }
+    },
+    {
+      "name": "load_elf",
+      "label": "内存 ELF 加载执行",
+      "description": "上传 ELF 二进制到目标机内存执行：memfd_create + execveat(AT_EMPTY_PATH) 零落地，memfd 不可用时自动降级匿名临时文件（写满即 unlink，被杀也无残留）；libuv 线程池异步执行（返回 Promise），不阻塞目标机 Node 事件循环",
+      "version": "0.1.0",
+      "author": "BKLockly",
+      "risk_level": "high",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/load_elf-v0.1.0",
+      "methods": [
+        {
+          "name": "execElf",
+          "label": "执行 ELF",
+          "description": "上传 ELF 二进制并在目标机内存中执行，收集 stdout/stderr 回传",
+          "params": [
+            {
+              "name": "elf_file",
+              "type": "file",
+              "label": "ELF 文件",
+              "required": true,
+              "description": "要执行的 ELF 二进制（建议静态编译；动态链接的二进制需目标机存在对应 so）"
+            },
+            {
+              "name": "args",
+              "type": "text",
+              "label": "命令行参数（空白分隔，不经 shell）",
+              "required": false,
+              "default": ""
+            },
+            {
+              "name": "timeout",
+              "type": "number",
+              "label": "超时秒数（默认 60，上限 1700）",
+              "required": false
+            }
+          ]
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "load_elf-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.0/load_elf-linux-arm64.node",
+          "sha256": "2ab197faeefa7cc1f5aefe25efc1d528b2f423d62c9b61e13df4b65c7972428e",
+          "size": 164952
+        },
+        "linux-x64": {
+          "filename": "load_elf-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.0/load_elf-linux-x64.node",
+          "sha256": "2e128abbf587f77cb23738294c7dc20c8f247056eb6f05cab2d18beb05ef7e13",
+          "size": 167528
         }
       }
     }
