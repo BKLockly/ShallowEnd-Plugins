@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-10-10T19:25:28Z",
+  "updated_at": "2026-10-11T04:57:06Z",
   "plugins": [
     {
       "name": "bof",
@@ -697,6 +697,26 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.1/load_elf-linux-x64.node",
           "sha256": "ee7b1abfdae33cb630cb9bdfc52a77685fc97037dc9040948618501f4f8df112",
           "size": 168696
+        }
+      }
+    },
+    {
+      "name": "sqlite_driver",
+      "label": "SQLite 驱动",
+      "description": "SQLite 数据库驱动（sql.js asm.js 纯 JS bundle），供推送目标机内存加载（dbDriverLoad）；整库内存打开，run 后自动写回源文件",
+      "version": "1.0.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "js",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/sqlite_driver-v1.0.0",
+      "methods": [],
+      "artifacts": {
+        "any": {
+          "filename": "sqlite_driver.js",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sqlite_driver-v1.0.0/sqlite_driver.js",
+          "sha256": "84463b1ebd9266f8468f7db757b80f9c4d89d588039ce3128c100730b850690b",
+          "size": 1308543
         }
       }
     }
