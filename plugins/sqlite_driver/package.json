@@ -1,0 +1,15 @@
+{
+  "name": "shallowend-plugin-sqlite_driver",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --minify --platform=node --format=cjs --outfile=dist/sqlite_driver.js --banner:js=\"const __dirname='/';const __filename='/index.js';\""
+  },
+  "dependencies": {
+    "sql.js": "1.13.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.5"
+  }
+}
