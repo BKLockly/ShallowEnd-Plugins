@@ -719,26 +719,6 @@
           "size": 1308543
         }
       }
-    },
-    {
-      "name": "redis_driver",
-      "label": "Redis 驱动",
-      "description": "Redis 数据库驱动（node-redis 4.x CJS bundle），供推送目标机内存加载（dbDriverLoad）；payload 以 Redis 命令行执行查询",
-      "version": "1.0.0",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "type": "js",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/redis_driver-v1.0.0",
-      "methods": [],
-      "artifacts": {
-        "any": {
-          "filename": "redis_driver.js",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/redis_driver-v1.0.0/redis_driver.js",
-          "sha256": "191527e4a9805ee59699877821624ad05600c26177c042c5427528691a629e9c",
-          "size": 285754
-        }
-      }
     }
   ]
 }
