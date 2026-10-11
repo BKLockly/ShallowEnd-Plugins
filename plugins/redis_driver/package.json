@@ -1,0 +1,15 @@
+{
+  "name": "shallowend-plugin-redis_driver",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --minify --platform=node --format=cjs --outfile=dist/redis_driver.js --external:aws-sdk --external:pg-native"
+  },
+  "dependencies": {
+    "redis": "4.7.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.5"
+  }
+}
