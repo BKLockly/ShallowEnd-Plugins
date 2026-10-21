@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-10-11T16:21:44Z",
+  "updated_at": "2026-10-21T16:20:10Z",
   "plugins": [
     {
       "name": "bof",
@@ -135,79 +135,6 @@
       }
     },
     {
-      "name": "linux_exploit_suggester",
-      "label": "Linux Exploit Suggester",
-      "description": "自动检测 Linux 内核漏洞（纯 Zig 实现）",
-      "version": "1.3.1",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/linux_exploit_suggester-v1.3.1",
-      "methods": [
-        {
-          "name": "check",
-          "label": "检测",
-          "description": "自动获取目标内核信息，检测可能的提权漏洞",
-          "params": []
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "linux_exploit_suggester-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/linux_exploit_suggester-v1.3.0/linux_exploit_suggester-linux-arm64.node",
-          "sha256": "4c9228f78560e1b0e84a1f7ba4793d02ced287b36306fc5c109fcf1789372a13",
-          "size": 71640
-        },
-        "linux-x64": {
-          "filename": "linux_exploit_suggester-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/linux_exploit_suggester-v1.3.0/linux_exploit_suggester-linux-x64.node",
-          "sha256": "78df48a696f0bea86d66df1e2384c530cc4b11eabf76b1839ee9e2d3f260a042",
-          "size": 73896
-        }
-      }
-    },
-    {
-      "name": "sensitive_search",
-      "label": "敏感文件搜索",
-      "description": "在 Linux 系统上搜索敏感文件（证书、密钥、密码等）",
-      "version": "0.14.3",
-      "author": "BKLockly",
-      "risk_level": "medium",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/sensitive_search-v0.14.3",
-      "methods": [
-        {
-          "name": "search",
-          "label": "敏感文件搜索",
-          "description": "扫描常见路径，通过文件名和文件内容匹配检测敏感文件（密钥、密码、Token等）",
-          "params": [
-            {
-              "name": "search_content",
-              "type": "checkbox",
-              "label": "搜索文件内容",
-              "required": false,
-              "default": false,
-              "description": "是否扫描文件内容（默认仅匹配文件名，开启后还会读取文件内容搜索密钥、密码等）"
-            }
-          ]
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "sensitive_search-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.14.2/sensitive_search-linux-arm64.node",
-          "sha256": "fb0b048a6aff538bfa6c90e4c884dffe3bfc9fcdfe62e793252a92ce78ef0b7d",
-          "size": 30776
-        },
-        "linux-x64": {
-          "filename": "sensitive_search-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.14.2/sensitive_search-linux-x64.node",
-          "sha256": "e6bf16306715e25b1eda01650e298881a138591a8c9165f4bce4eaeceed554a7",
-          "size": 30696
-        }
-      }
-    },
-    {
       "name": "mysql_driver",
       "label": "MySQL 驱动",
       "description": "MySQL 数据库驱动（mysql2 CJS bundle），供推送目标机内存加载（dbDriverLoad）",
@@ -244,6 +171,95 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/pg_driver-v1.0.0/pg_driver.js",
           "sha256": "ad6b9c88be14cf2f250bc0a9db75f3a0f89f087f75ca90103168417d5199dd70",
           "size": 179719
+        }
+      }
+    },
+    {
+      "name": "file_decompress",
+      "label": "文件解压",
+      "description": "使用 Gzip 流式解压 .gz 文件，支持将 tar.gz 归档解包为目录，纯 Zig 实现，无需外部命令",
+      "version": "0.3.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_decompress-v0.3.0",
+      "methods": [
+        {
+          "name": "decompress",
+          "label": "文件解压",
+          "description": "将 .gz 文件流式解压为源文件（支持任意大小文件）",
+          "params": [
+            {
+              "name": "source_path",
+              "type": "text",
+              "label": "源文件",
+              "required": true,
+              "description": "要解压的 .gz 文件路径"
+            },
+            {
+              "name": "target_path",
+              "type": "text",
+              "label": "目标路径",
+              "required": true,
+              "description": "输出的源文件路径"
+            }
+          ]
+        },
+        {
+          "name": "decompressArchive",
+          "label": "归档解包",
+          "description": "将 .tar.gz 归档解包到目标目录（保留可执行位，已存在文件跳过并在结果中列明）",
+          "params": [
+            {
+              "name": "source_path",
+              "type": "text",
+              "label": "归档文件",
+              "required": true,
+              "description": "要解包的 .tar.gz 文件路径"
+            },
+            {
+              "name": "target_path",
+              "type": "text",
+              "label": "目标目录",
+              "required": true,
+              "description": "解包输出的目标目录路径（不存在会自动创建）"
+            }
+          ]
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "file_decompress-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_decompress-v0.3.0/file_decompress-linux-arm64.node",
+          "sha256": "acad59dc238de98a11d7cf03f12648a47dc762804eae5ea268ee1c8c251d2603",
+          "size": 187840
+        },
+        "linux-x64": {
+          "filename": "file_decompress-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_decompress-v0.3.0/file_decompress-linux-x64.node",
+          "sha256": "ee5a483e4d6fa4354690d5fbf36866a094334bd8db96de78feba6b12606f323c",
+          "size": 192960
+        }
+      }
+    },
+    {
+      "name": "sqlite_driver",
+      "label": "SQLite 驱动",
+      "description": "SQLite 数据库驱动（sql.js asm.js 纯 JS bundle），供推送目标机内存加载（dbDriverLoad）；整库内存打开，run 后自动写回源文件",
+      "version": "1.0.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "js",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/sqlite_driver-v1.0.0",
+      "methods": [],
+      "artifacts": {
+        "any": {
+          "filename": "sqlite_driver.js",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sqlite_driver-v1.0.0/sqlite_driver.js",
+          "sha256": "84463b1ebd9266f8468f7db757b80f9c4d89d588039ce3128c100730b850690b",
+          "size": 1308543
         }
       }
     },
@@ -446,14 +462,14 @@
       "artifacts": {
         "linux-arm64": {
           "filename": "agentscan-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.2.0/agentscan-linux-arm64.node",
-          "sha256": "ccb29d10be8b9ebdde3260a9f29e44777bf592374588d26f3e8853ffc75ab9eb",
-          "size": 3669224
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.2.1/agentscan-linux-arm64.node",
+          "sha256": "925100e7e8a69428c7aba43128d16537936ddfef62b50482727d116d252e18be",
+          "size": 3669288
         },
         "linux-x64": {
           "filename": "agentscan-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.2.0/agentscan-linux-x64.node",
-          "sha256": "bf704d566fd5baccab8c8b63e7d610ff91b11a6e66bca0c66cf2a44e95b46880",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/agentscan-v0.2.1/agentscan-linux-x64.node",
+          "sha256": "6dad7c5da421dde4f2dba99cf431551d30462d1b358fbc75d22ca7982c36c7cd",
           "size": 4045848
         }
       }
@@ -557,84 +573,48 @@
       "artifacts": {
         "linux-arm64": {
           "filename": "file_compress-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.3.0/file_compress-linux-arm64.node",
-          "sha256": "d12c9d6c3c85398e850f3032e32773909c4ffbc9aec960858bbc496e050fe9b0",
-          "size": 189800
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.3.1/file_compress-linux-arm64.node",
+          "sha256": "5ec6ee35b0a73d52b8beb9126aa5c95e29eb963162e2c808205e4f12de3c525c",
+          "size": 188376
         },
         "linux-x64": {
           "filename": "file_compress-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.3.0/file_compress-linux-x64.node",
-          "sha256": "679cda97da69459e5121d780821a6dbdacdfed8c5a90575978736bdf89e6d81b",
-          "size": 194312
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.3.1/file_compress-linux-x64.node",
+          "sha256": "03113b2ac1384a5351e10de5e56b4bff577963f26d7038458066086f5363498d",
+          "size": 193448
         }
       }
     },
     {
-      "name": "file_decompress",
-      "label": "文件解压",
-      "description": "使用 Gzip 流式解压 .gz 文件，支持将 tar.gz 归档解包为目录，纯 Zig 实现，无需外部命令",
-      "version": "0.3.0",
+      "name": "linux_exploit_suggester",
+      "label": "Linux Exploit Suggester",
+      "description": "自动检测 Linux 内核漏洞（纯 Zig 实现）",
+      "version": "1.3.1",
       "author": "BKLockly",
       "risk_level": "low",
       "type": "native",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/file_decompress-v0.3.0",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/linux_exploit_suggester-v1.3.1",
       "methods": [
         {
-          "name": "decompress",
-          "label": "文件解压",
-          "description": "将 .gz 文件流式解压为源文件（支持任意大小文件）",
-          "params": [
-            {
-              "name": "source_path",
-              "type": "text",
-              "label": "源文件",
-              "required": true,
-              "description": "要解压的 .gz 文件路径"
-            },
-            {
-              "name": "target_path",
-              "type": "text",
-              "label": "目标路径",
-              "required": true,
-              "description": "输出的源文件路径"
-            }
-          ]
-        },
-        {
-          "name": "decompressArchive",
-          "label": "归档解包",
-          "description": "将 .tar.gz 归档解包到目标目录（保留可执行位，已存在文件跳过并在结果中列明）",
-          "params": [
-            {
-              "name": "source_path",
-              "type": "text",
-              "label": "归档文件",
-              "required": true,
-              "description": "要解包的 .tar.gz 文件路径"
-            },
-            {
-              "name": "target_path",
-              "type": "text",
-              "label": "目标目录",
-              "required": true,
-              "description": "解包输出的目标目录路径（不存在会自动创建）"
-            }
-          ]
+          "name": "check",
+          "label": "检测",
+          "description": "自动获取目标内核信息，检测可能的提权漏洞",
+          "params": []
         }
       ],
       "artifacts": {
         "linux-arm64": {
-          "filename": "file_decompress-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_decompress-v0.3.0/file_decompress-linux-arm64.node",
-          "sha256": "acad59dc238de98a11d7cf03f12648a47dc762804eae5ea268ee1c8c251d2603",
-          "size": 187840
+          "filename": "linux_exploit_suggester-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/linux_exploit_suggester-v1.3.1/linux_exploit_suggester-linux-arm64.node",
+          "sha256": "3913cfd60a609b652844347c185d9984a20a4966956144fb29fe006119f5382c",
+          "size": 69816
         },
         "linux-x64": {
-          "filename": "file_decompress-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_decompress-v0.3.0/file_decompress-linux-x64.node",
-          "sha256": "ee5a483e4d6fa4354690d5fbf36866a094334bd8db96de78feba6b12606f323c",
-          "size": 192960
+          "filename": "linux_exploit_suggester-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/linux_exploit_suggester-v1.3.1/linux_exploit_suggester-linux-x64.node",
+          "sha256": "dfd981d8963145f77d159c3e2f822fb76c5c9fdd3fef0b6aa5a9ae022d86e170",
+          "size": 71144
         }
       }
     },
@@ -688,35 +668,57 @@
       "artifacts": {
         "linux-arm64": {
           "filename": "load_elf-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.1/load_elf-linux-arm64.node",
-          "sha256": "b9e64e6b6a8c066e68f283b0269ea8ac862cd4510e7ab7295055a8a09c9a83bc",
-          "size": 165944
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.2/load_elf-linux-arm64.node",
+          "sha256": "ad0581b36d3f1c7e4bcf03b050a23ccbb7030f0a015d30786f34049bd266db88",
+          "size": 166136
         },
         "linux-x64": {
           "filename": "load_elf-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.1/load_elf-linux-x64.node",
-          "sha256": "ee7b1abfdae33cb630cb9bdfc52a77685fc97037dc9040948618501f4f8df112",
-          "size": 168696
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/load_elf-v0.1.2/load_elf-linux-x64.node",
+          "sha256": "c2b93ff7a14ccbd316e66b4ed130206a64a312811f4982d7dacf2dbef95eef3c",
+          "size": 168984
         }
       }
     },
     {
-      "name": "sqlite_driver",
-      "label": "SQLite 驱动",
-      "description": "SQLite 数据库驱动（sql.js asm.js 纯 JS bundle），供推送目标机内存加载（dbDriverLoad）；整库内存打开，run 后自动写回源文件",
-      "version": "1.0.0",
+      "name": "sensitive_search",
+      "label": "敏感文件搜索",
+      "description": "在 Linux 系统上搜索敏感文件（证书、密钥、密码等）",
+      "version": "0.14.3",
       "author": "BKLockly",
-      "risk_level": "low",
-      "type": "js",
+      "risk_level": "medium",
+      "type": "native",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/sqlite_driver-v1.0.0",
-      "methods": [],
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/sensitive_search-v0.14.3",
+      "methods": [
+        {
+          "name": "search",
+          "label": "敏感文件搜索",
+          "description": "扫描常见路径，通过文件名和文件内容匹配检测敏感文件（密钥、密码、Token等）",
+          "params": [
+            {
+              "name": "search_content",
+              "type": "checkbox",
+              "label": "搜索文件内容",
+              "required": false,
+              "default": false,
+              "description": "是否扫描文件内容（默认仅匹配文件名，开启后还会读取文件内容搜索密钥、密码等）"
+            }
+          ]
+        }
+      ],
       "artifacts": {
-        "any": {
-          "filename": "sqlite_driver.js",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sqlite_driver-v1.0.0/sqlite_driver.js",
-          "sha256": "84463b1ebd9266f8468f7db757b80f9c4d89d588039ce3128c100730b850690b",
-          "size": 1308543
+        "linux-arm64": {
+          "filename": "sensitive_search-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.14.3/sensitive_search-linux-arm64.node",
+          "sha256": "a0d644900c2bb152658cc962b96f1978341cab1649cf7f13011daa5b0c15f4fa",
+          "size": 32200
+        },
+        "linux-x64": {
+          "filename": "sensitive_search-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.14.3/sensitive_search-linux-x64.node",
+          "sha256": "cb8a255e198d735542c16f045aeac9664561a9975f109bc920b4929e22380cba",
+          "size": 32296
         }
       }
     }
