@@ -13,6 +13,8 @@ const scanner = if (is_linux) @import("scanner.zig") else struct {
         _: *usize,
         _: *usize,
         _: *usize,
+        _: *usize,
+        _: *bool,
         _: bool,
     ) bool {
         return false;
@@ -26,13 +28,14 @@ comptime {
 pub fn search(call: tokota.Call) ![]const u8 {
     var buf: [types.output_buf_size]u8 = undefined;
     var len: usize = 0;
+    var truncated = false;
 
-    types.log(&buf, &len, "[INFO] Platform: {s}\n", .{@tagName(builtin.os.tag)});
+    types.log(&buf, &len, &truncated, "[INFO] Platform: {s}\n", .{@tagName(builtin.os.tag)});
 
     if (!is_linux) {
-        types.log(&buf, &len, "[ERRO] This plugin only works on Linux systems\n", .{});
-        types.log(&buf, &len, "[INFO] Total scanned: 0 files\n", .{});
-        types.log(&buf, &len, "[INFO] Matches found: 0\n", .{});
+        types.log(&buf, &len, &truncated, "[ERRO] This plugin only works on Linux systems\n", .{});
+        types.log(&buf, &len, &truncated, "[INFO] Total scanned: 0 files\n", .{});
+        types.log(&buf, &len, &truncated, "[INFO] Matches found: 0\n", .{});
         const result = try std.heap.c_allocator.alloc(u8, len);
         @memcpy(result, buf[0..len]);
         return result;
@@ -47,16 +50,17 @@ pub fn search(call: tokota.Call) ![]const u8 {
         break :blk val.boolean(call.env) catch false;
     } else false;
 
-    types.log(&buf, &len, "[INFO] Scanning: /\n", .{});
+    types.log(&buf, &len, &truncated, "[INFO] Scanning: /\n", .{});
     if (search_content) {
-        types.log(&buf, &len, "[INFO] Content scan: enabled\n", .{});
+        types.log(&buf, &len, &truncated, "[INFO] Content scan: enabled\n", .{});
     } else {
-        types.log(&buf, &len, "[INFO] Content scan: disabled\n", .{});
+        types.log(&buf, &len, &truncated, "[INFO] Content scan: disabled\n", .{});
     }
-    types.log(&buf, &len, "[DBUG] Max depth: {}\n", .{types.max_depth});
+    types.log(&buf, &len, &truncated, "[DBUG] Max depth: {}\n", .{types.max_depth});
 
     var total_scanned: usize = 0;
     var matches_found: usize = 0;
+    var reported: usize = 0;
     var errors_count: usize = 0;
 
     const CLOCK_MONOTONIC: std.c.clockid_t = if (comptime builtin.os.tag == .linux)
@@ -68,18 +72,23 @@ pub fn search(call: tokota.Call) ![]const u8 {
     const start_ns = @as(i128, ts.sec) * 1_000_000_000 + ts.nsec;
 
     for (&types.search_paths) |base_path| {
-        _ = scanner.scan(base_path, &buf, &len, &total_scanned, &matches_found, &errors_count, search_content);
+        _ = scanner.scan(base_path, &buf, &len, &total_scanned, &matches_found, &reported, &errors_count, &truncated, search_content);
     }
 
     _ = std.c.clock_gettime(CLOCK_MONOTONIC, &ts);
     const elapsed_ns = (@as(i128, ts.sec) * 1_000_000_000 + ts.nsec) - start_ns;
     const elapsed_ms = @as(i64, @intCast(@divTrunc(elapsed_ns, 1_000_000)));
-    types.log(&buf, &len, "\n[INFO] Total scanned: {} files\n", .{total_scanned});
-    types.log(&buf, &len, "[INFO] Matches found: {}\n", .{matches_found});
-    types.log(&buf, &len, "[INFO] Elapsed: {} ms\n", .{elapsed_ms});
+    types.log(&buf, &len, &truncated, "\n[INFO] Total scanned: {} files\n", .{total_scanned});
+    types.log(&buf, &len, &truncated, "[INFO] Matches found: {}\n", .{matches_found});
+    types.log(&buf, &len, &truncated, "[INFO] Elapsed: {} ms\n", .{elapsed_ms});
 
     if (errors_count > 0) {
-        types.log(&buf, &len, "[WARN] Errors encountered: {}\n", .{errors_count});
+        types.log(&buf, &len, &truncated, "[WARN] Errors encountered: {}\n", .{errors_count});
+    }
+
+    // 尾部保留区保证这行总有容身之处
+    if (truncated) {
+        types.writeTruncationMarker(&buf, &len);
     }
 
     const result = try std.heap.c_allocator.alloc(u8, len);

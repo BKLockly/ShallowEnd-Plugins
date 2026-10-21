@@ -47,13 +47,6 @@ const text_extensions = [_][]const u8{
     ".tf",         ".tfvars",
 };
 
-const skip_dir_names = [_][]const u8{
-    "proc",     "sys",   "dev",  "run",         "boot",         "media",      "mnt",
-    ".git",     ".svn",  ".hg",  "lost+found",  "$RECYCLE.BIN", "secfixes.d", "testdata",
-    "fixtures", "mock",  "stub", "__pycache__", "node_modules", ".cache",     "vendor",
-    ".tox",     ".eggs",
-};
-
 fn tryOpenDir(dir_fd: std.posix.fd_t, name: []const u8) bool {
     const fd = std.posix.openat(dir_fd, name, .{ .DIRECTORY = true, .ACCMODE = .RDONLY }, 0);
     if (fd) |f| {
@@ -111,7 +104,9 @@ fn walkDir(
     len: *usize,
     total_scanned: *usize,
     matches_found: *usize,
+    reported: *usize,
     errors_count: *usize,
+    truncated: *bool,
     search_content: bool,
 ) void {
     if (current_depth > types.max_depth) return;
@@ -130,8 +125,6 @@ fn walkDir(
 
     if (total_scanned.* >= types.max_scanned) return;
 
-    var reported: usize = 0;
-
     while (true) {
         const entry = std.c.readdir(dir_stream) orelse break;
         const name = std.mem.sliceTo(&entry.name, 0);
@@ -143,53 +136,58 @@ fn walkDir(
         const is_dir = switch (entry.type) {
             DT_DIR => true,
             DT_REG => false,
-            else => if (isSkipDir(name)) false else tryOpenDir(dir_fd, name),
+            else => if (types.isSkipDir(name)) false else tryOpenDir(dir_fd, name),
         };
 
         if (is_dir) {
-            if (isSkipDir(name)) continue;
+            if (types.isSkipDir(name)) continue;
+            var path_buf: [4096]u8 = undefined;
+            const fp = std.fmt.bufPrint(&path_buf, "{s}/{s}", .{ current_path, name }) catch continue;
+            // 系统子树按路径前缀跳过（在 openat 之前，省一次无谓打开）
+            if (types.isSkippedPath(fp)) continue;
             const child_fd = std.posix.openat(parent_fd, name, .{ .DIRECTORY = true, .ACCMODE = .RDONLY }, 0) catch {
                 errors_count.* += 1;
                 continue;
             };
             defer _ = std.c.close(child_fd);
-            var path_buf: [4096]u8 = undefined;
-            const fp = std.fmt.bufPrint(&path_buf, "{s}/{s}", .{ current_path, name }) catch continue;
-            walkDir(child_fd, fp, current_depth + 1, buf, len, total_scanned, matches_found, errors_count, search_content);
+            walkDir(child_fd, fp, current_depth + 1, buf, len, total_scanned, matches_found, reported, errors_count, truncated, search_content);
             continue;
         }
 
         total_scanned.* += 1;
         if (matchFile(dir_fd, name, search_content)) |label| {
             matches_found.* += 1;
-            if (reported < types.max_output_matches) {
+            if (reported.* < types.max_reported_matches) {
                 var path_buf: [4096]u8 = undefined;
                 const fp = std.fmt.bufPrint(&path_buf, "{s}/{s}", .{ current_path, name }) catch continue;
-                types.log(buf, len, "[WARN] Found: {s} ({s})\n", .{ fp, label });
-                reported += 1;
+                types.log(buf, len, truncated, "[WARN] Found: {s} ({s})\n", .{ fp, label });
+                reported.* += 1;
             }
         }
     }
 }
 
-fn isSkipDir(name: []const u8) bool {
-    for (&skip_dir_names) |d| {
-        if (std.mem.eql(u8, name, d)) return true;
-    }
-    return false;
-}
-
-pub fn scan(base_path: []const u8, buf: []u8, len: *usize, total_scanned: *usize, matches_found: *usize, errors_count: *usize, search_content: bool) bool {
+pub fn scan(
+    base_path: []const u8,
+    buf: []u8,
+    len: *usize,
+    total_scanned: *usize,
+    matches_found: *usize,
+    reported: *usize,
+    errors_count: *usize,
+    truncated: *bool,
+    search_content: bool,
+) bool {
     const base_fd = std.posix.openat(std.posix.AT.FDCWD, base_path, .{ .DIRECTORY = true, .ACCMODE = .RDONLY }, 0) catch {
-        types.log(buf, len, "[ERRO] Permission denied: {s}/\n", .{base_path});
+        types.log(buf, len, truncated, "[ERRO] Permission denied: {s}/\n", .{base_path});
         errors_count.* += 1;
         return false;
     };
     defer _ = std.c.close(base_fd);
 
-    types.log(buf, len, "[DBUG] Scanning {s}/\n", .{base_path});
+    types.log(buf, len, truncated, "[DBUG] Scanning {s}/\n", .{base_path});
 
-    walkDir(base_fd, "", 0, buf, len, total_scanned, matches_found, errors_count, search_content);
+    walkDir(base_fd, "", 0, buf, len, total_scanned, matches_found, reported, errors_count, truncated, search_content);
 
     return true;
 }

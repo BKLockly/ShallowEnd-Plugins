@@ -2,7 +2,7 @@
   "name": "sensitive_search",
   "label": "敏感文件搜索",
   "description": "在 Linux 系统上搜索敏感文件（证书、密钥、密码等）",
-  "version": "0.14.2",
+  "version": "0.14.3",
   "author": "BKLockly",
   "platform": "linux",
   "risk_level": "medium",

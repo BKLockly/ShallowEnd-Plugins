@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    _ = b.dependency("tokota", .{
+    const tokota_dep = b.dependency("tokota", .{
         .target = target,
         .optimize = optimize,
     });
@@ -34,4 +34,20 @@ pub fn build(b: *std.Build) void {
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_unit_tests.step);
+
+    if (target.result.os.tag == .linux) {
+        // root.zig 编译检查（含 scanner.zig 调用链；scanner Linux-only，
+        // 故仅在 Linux 目标上启用，bof 同款门控）：generated_bin = null
+        // → 只做语义分析，不链接不执行
+        const check_mod = b.createModule(.{
+            .root_source_file = b.path("src/root_test.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        check_mod.link_libc = true;
+        check_mod.addImport("tokota", tokota_dep.module("tokota"));
+        const check_tests = b.addTest(.{ .root_module = check_mod });
+        check_tests.generated_bin = null;
+        test_step.dependOn(&check_tests.step);
+    }
 }
