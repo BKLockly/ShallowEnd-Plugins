@@ -251,15 +251,33 @@ pub fn myMethod(call: tokota.Call) ![]const u8 {
 
 规则：标题行始终带 `[LEVEL]`；详情/标签/统计用 4 空格缩进且不带前缀；空行用 `\n`（空字符串行）。
 
+## 工程坑点备忘（2026-10 批量修复沉淀）
+
+这些是实打实踩过/被测试逮住的坑，改相关代码前先过一遍：
+
+1. **napi 层 `zig build test` 不执行**——只做语义分析（`generated_bin = null`），内存类 bug（双重释放、UAF）只有真加载 `.node` 才暴露（agentscan v0.2.0 双重释放就是 CI 盲区放行的）。`build.yml` 的 Node smoke 步专防此类；本地验证两件套：
+   - `zig build test -Dtarget=x86_64-linux-gnu`——编译通过即达标，run 报 "unable to execute" 属 foreign binary 预期；
+   - Docker 真跑：`docker run --rm --platform linux/amd64 -v $PWD/plugins:/w node:22-slim bash -c "cd /w/<plugin> && node test.js"`（Apple Silicon 必须显式 `--platform linux/amd64`，否则默认 arm64 变体，dlopen 假报 "No such file"）。
+2. **`@memcpy` 拒绝别名参数**：`f.reader(io_, &buf)` 的 `buf` 是 reader 内部缓冲，绝不能同时当外部拷贝缓冲传出去（file_compress compressDir 长路径分支教训）。Debug 构建会 panic 逮住；**ReleaseSmall 静默产出坏数据**——所以本地排查要用 Debug 跑测试。
+3. **AsyncWorker 任务所有权移交模式**：在 JS 线程创建、要传给 worker 线程的堆资源（如 cmd_args、COFF 字节），`prepare` 成功后所有权归 task、由 `task.deinit` 统一释放——**外层绝不能再挂 `defer`/`errdefer` free**（agentscan v0.2.0 的 runSub defer 提前释放 cmd_args = UAF + 双重释放）。失败路径在 `prepare(...) catch` 里手动释放。
+4. **foreign install 缓存 + `mv` 陷阱**：`make build-all` 的 `mv` 把产物移走后，源码未变时再跑 `zig build` 会缓存命中且**不重建文件**（install 步认为早已交付）。本地复现需 `rm -rf .zig-cache`；CI 冒烟步因此**不得 `rm *.node`**（否则后续 release 的 `mv` 失败）。
+5. **musl 目标的 .node 无法在 glibc 靶机加载**：产物 `DT_NEEDED "libc.so"`（loader 不找这个名），dlopen 直接失败（bof v0.2.0 线上 release 即此病）。插件产物统一 **gnu 目标**；第三方纯静态 `.a`（bof-launcher 等）与 libc 目标无关，gnu 链接无碍。
+6. **行为改动必须 bump 版本**：CI 按 `<name>-v<version>` tag 判断是否发布，不 bump = 推送了也不出 release、registry 不更新。plugin.json / build.zig.zon / registry.json 三处同步（`check_consistency.py` 会拦后两处）。
+7. **test.js 必须对齐真实导出**：历史上三份 test.js 陈旧到调不存在的导出（`isDocker()`/`mod.hello`/bof 里整份是 hello 的复制品），全靠 node 冒烟才暴露。新插件交付时 `node test.js` 必须真跑过。
+8. **C 字符串 const 限定**：bof_launcher 的 `bofArgsAdd` 收 `[*c]u8`（可变指针）——经手 C API 的字符串一律持 `[]u8`，别用 `[]const u8` 再 `@constCast`。
+9. **`std.Io.Writer/Reader` 别名类**：写测试时给 `f.writer(io_, &wbuf)` 喂 `wbuf` 自身当数据源同样触发 `@memcpy arguments alias` panic——数据缓冲与流内部缓冲永远分开声明。
+
 ## 已迁移插件版本基线
+
+> 权威版本以 registry.json 为准（CI 发布后自动回写）；下表仅为迁移期快照的延续。
 
 | 插件 | version | 备注 |
 |------|---------|------|
-| bof | 0.2.0 | musl，静态链接 lib/ 下 bof-launcher |
-| docker_detect | 3.0.1 | 原 plugin-docker-detect |
-| file_compress | 0.2.0 | |
-| file_decompress | 0.2.1 | 原 plugin-file-decompress |
+| bof | 0.3.0 | 静态链接 lib/ 下 bof-launcher（gnu 目标，v0.3.0 起） |
+| docker_detect | 3.1.0 | 原 plugin-docker-detect |
+| file_compress | 0.3.1 | |
+| file_decompress | 0.3.0 | 原 plugin-file-decompress |
 | hello | 0.4.1 | scaffold 示例插件 |
-| linux_exploit_suggester | 1.3 | CVE 知识库参考 The-Z-Labs 上游（GPL-3.0），Zig 匹配逻辑为原创，LICENSE/CHANGELOG 保留 |
-| sensitive_search | 0.14.2 | |
-| agentscan | 0.1.0 | Zig 薄壳 + 内嵌 Go 静态二进制（上游 7anX/AgentScan，MIT，commit 2589c30），CI 需要 Go 工具链 |
+| linux_exploit_suggester | 1.3.1 | CVE 知识库参考 The-Z-Labs 上游（GPL-3.0），Zig 匹配逻辑为原创，LICENSE/CHANGELOG 保留 |
+| sensitive_search | 0.14.3 | |
+| agentscan | 0.2.1 | Zig 薄壳 + 内嵌 Go 静态二进制（上游 7anX/AgentScan，MIT，commit 2589c30），CI 需要 Go 工具链 |
