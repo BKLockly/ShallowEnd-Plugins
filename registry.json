@@ -5,12 +5,12 @@
     {
       "name": "bof",
       "label": "BOF Launcher",
-      "description": "加载并执行 Beacon Object Files (BOF)",
-      "version": "0.2.0",
+      "description": "加载并执行 Beacon Object Files (BOF)；v0.3.0 起在 libuv 线程池异步执行（返回 Promise），不再阻塞目标机 Node 事件循环",
+      "version": "0.3.0",
       "author": "BKLockly",
       "risk_level": "high",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/bof-v0.2.0",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/bof-v0.3.0",
       "methods": [
         {
           "name": "executeBof",
@@ -31,7 +31,15 @@
               "label": "命令行参数",
               "required": false,
               "default": "",
-              "description": "传递给 BOF 的命令行参数"
+              "description": "传递给 BOF 的参数；默认按 Cobalt Strike 惯例整串单参（BOF 侧 entrypoint(char*, int) 自行解析）"
+            },
+            {
+              "name": "zlab_args",
+              "type": "checkbox",
+              "label": "Z-Labs 多参数模式",
+              "required": false,
+              "default": false,
+              "description": "勾选后按空白拆分 args 逐个传参（bof-launcher 前缀类型：i: u32、s: u16、str:/z: 字符串），适配 Z-Labs bofparam 风格 BOF"
             }
           ]
         }
@@ -54,12 +62,12 @@
     {
       "name": "docker_detect",
       "label": "Docker 环境检测",
-      "description": "检测目标是否运行在 Docker 容器中，支持 /.dockerenv、cgroup、mountinfo、环境变量等多维度检测",
-      "version": "3.0.1",
+      "description": "检测目标是否运行在容器中，支持 /.dockerenv、/run/.containerenv、cgroup、mountinfo、环境变量、pid1 等多维度检测，输出 Runtime hints（docker/podman/kubernetes/lxc）",
+      "version": "3.1.0",
       "author": "BKLockly",
       "risk_level": "low",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.0.1",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.1.0",
       "methods": [
         {
           "name": "detect",
