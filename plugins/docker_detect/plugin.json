@@ -1,8 +1,8 @@
 {
   "name": "docker_detect",
   "label": "Docker 环境检测",
-  "description": "检测目标是否运行在 Docker 容器中，支持 /.dockerenv、cgroup、mountinfo、环境变量等多维度检测",
-  "version": "3.0.1",
+  "description": "检测目标是否运行在容器中，支持 /.dockerenv、/run/.containerenv、cgroup、mountinfo、环境变量、pid1 等多维度检测，输出 Runtime hints（docker/podman/kubernetes/lxc）",
+  "version": "3.1.0",
   "author": "BKLockly",
   "risk_level": "low",
   "methods": [

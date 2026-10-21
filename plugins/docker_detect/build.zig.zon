@@ -1,6 +1,6 @@
 .{
     .name = .docker,
-    .version = "3.0.1",
+    .version = "3.1.0",
     .fingerprint = 0xf255ffada3fadd42,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
