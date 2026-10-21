@@ -204,8 +204,16 @@ pub fn exec(allocator: std.mem.Allocator, argv: []const []const u8, run_timeout_
     }
 
     if (timed_out) _ = linux.kill(@intCast(pid), .KILL);
-    // 拖干残余输出（kill 后管道里可能还有数据）
+    // 拖干残余输出（kill 后管道里可能还有数据）。孙进程可能继承写端导致
+    // EOF 永不来，read 会无限阻塞，故拖干最多再等 2s（waitpid 仍回收直接子进程）。
+    const drain_deadline_ns = monoNs() + 2 * std.time.ns_per_s;
     while (true) {
+        const now = monoNs();
+        if (now >= drain_deadline_ns) break;
+        var pfds = [_]std.posix.pollfd{.{ .fd = fds[0], .events = std.posix.POLL.IN, .revents = 0 }};
+        const wait_ms: i32 = @intCast(@min(@divFloor(drain_deadline_ns - now, std.time.ns_per_ms), 2000));
+        const n = std.posix.poll(&pfds, @max(wait_ms, 1)) catch 0;
+        if (n == 0) break;
         const r = std.posix.read(fds[0], &buf) catch 0;
         if (r == 0) break;
         out.writer.writeAll(buf[0..r]) catch {};

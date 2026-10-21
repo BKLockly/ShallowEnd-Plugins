@@ -73,14 +73,15 @@ fn runSub(call: tokota.Call, subcommand: []const u8, allow_strict: bool, allow_h
         }
         return error.BuildArgsFailed;
     };
-    defer {
+
+    // cmd_args 所有权移交 ScanTask：prepare 成功后由 task.deinit 统一释放。
+    // （此前 runSub 侧的 defer 会在 schedule 后立刻释放，而 task 仍持有同一
+    // 指针并在 execute/deinit 中使用与释放——use-after-free + 双重释放）
+    const task = ScanTask.prepare(allocator, subcommand, cmd_args) catch |e| {
         for (cmd_args) |a| allocator.free(a);
         allocator.free(cmd_args);
-    }
-
-    // 解压内嵌 payload → 落地临时文件（0700）；耗时的 fork+waitpid 放到
-    // libuv 线程池（AsyncWorker）执行，导出 Promise，不阻塞 Node 事件循环
-    const task = try ScanTask.prepare(allocator, subcommand, cmd_args);
+        return e;
+    };
     errdefer task.deinit(false);
 
     const promise, const deferred = try call.env.promise();
@@ -166,10 +167,12 @@ const ScanTask = struct {
             if (!resolved) allo.free(o);
         }
         if (self.err_msg) |m| allo.free(m);
+        // argv[0] 是 bin_path 的独立副本；argv[1..] 与 cmd_args 元素共享指针，
+        // 元素只随 cmd_args 循环释放一次（此前两处各 free 一次构成双重释放）
+        allo.free(self.argv[0]);
+        allo.free(self.argv);
         for (self.cmd_args) |a| allo.free(a);
         allo.free(self.cmd_args);
-        for (self.argv) |a| allo.free(a);
-        allo.free(self.argv);
         allo.free(self.tmp_dir);
         allo.free(self.bin_path);
         allo.free(self.subcommand);
@@ -193,6 +196,7 @@ const ScanTask = struct {
 
         const clean = runner.stripAnsi(allocator, result.output) catch
             return error.NormalizeFailed;
+        defer allocator.free(clean);
 
         var out: std.ArrayList(u8) = .empty;
         errdefer out.deinit(allocator);
