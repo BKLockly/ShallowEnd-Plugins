@@ -1,96 +1,7 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-10-21T16:20:10Z",
+  "updated_at": "2026-10-21T17:06:22Z",
   "plugins": [
-    {
-      "name": "bof",
-      "label": "BOF Launcher",
-      "description": "加载并执行 Beacon Object Files (BOF)；v0.3.0 起在 libuv 线程池异步执行（返回 Promise），不再阻塞目标机 Node 事件循环",
-      "version": "0.3.0",
-      "author": "BKLockly",
-      "risk_level": "high",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/bof-v0.3.0",
-      "methods": [
-        {
-          "name": "executeBof",
-          "label": "执行 BOF",
-          "description": "执行一个 BOF 文件",
-          "params": [
-            {
-              "name": "bof_file",
-              "type": "file",
-              "label": "BOF 文件",
-              "required": true,
-              "accept": ".o",
-              "description": "选择要执行的 BOF 文件"
-            },
-            {
-              "name": "args",
-              "type": "text",
-              "label": "命令行参数",
-              "required": false,
-              "default": "",
-              "description": "传递给 BOF 的参数；默认按 Cobalt Strike 惯例整串单参（BOF 侧 entrypoint(char*, int) 自行解析）"
-            },
-            {
-              "name": "zlab_args",
-              "type": "checkbox",
-              "label": "Z-Labs 多参数模式",
-              "required": false,
-              "default": false,
-              "description": "勾选后按空白拆分 args 逐个传参（bof-launcher 前缀类型：i: u32、s: u16、str:/z: 字符串），适配 Z-Labs bofparam 风格 BOF"
-            }
-          ]
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "bof-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/bof-v0.2.0/bof-linux-arm64.node",
-          "sha256": "919143d60d3a78cf55420b984b9cd69de7bb4efb25d290c1b6ca456c722c15e5",
-          "size": 91584
-        },
-        "linux-x64": {
-          "filename": "bof-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/bof-v0.2.0/bof-linux-x64.node",
-          "sha256": "e195525429d87a6fc1b9de6b374042cfa50aeebc6f435763791babaf65b98d57",
-          "size": 94928
-        }
-      }
-    },
-    {
-      "name": "docker_detect",
-      "label": "Docker 环境检测",
-      "description": "检测目标是否运行在容器中，支持 /.dockerenv、/run/.containerenv、cgroup、mountinfo、环境变量、pid1 等多维度检测，输出 Runtime hints（docker/podman/kubernetes/lxc）",
-      "version": "3.1.0",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.1.0",
-      "methods": [
-        {
-          "name": "detect",
-          "label": "Docker 检测",
-          "description": "检测当前环境是否为 Docker 容器",
-          "params": []
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "docker_detect-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.0.1/docker_detect-linux-arm64.node",
-          "sha256": "c9b58d403b9b1904b34d437300c8104ae9b95b0dbca7b5f350cd08c7897fd303",
-          "size": 20688
-        },
-        "linux-x64": {
-          "filename": "docker_detect-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.0.1/docker_detect-linux-x64.node",
-          "sha256": "18a409384048d57c81b1eda04e93036d44bfe03d34116699097a55bdf422ad19",
-          "size": 21280
-        }
-      }
-    },
     {
       "name": "hello",
       "label": "Hello World",
@@ -727,6 +638,97 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.14.3/sensitive_search-linux-x64.node",
           "sha256": "cb8a255e198d735542c16f045aeac9664561a9975f109bc920b4929e22380cba",
           "size": 32296
+        }
+      }
+    },
+    {
+      "name": "bof",
+      "label": "BOF Launcher",
+      "description": "加载并执行 Beacon Object Files (BOF)；v0.3.0 起在 libuv 线程池异步执行（返回 Promise），不再阻塞目标机 Node 事件循环",
+      "version": "0.3.0",
+      "author": "BKLockly",
+      "risk_level": "high",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/bof-v0.3.0",
+      "methods": [
+        {
+          "name": "executeBof",
+          "label": "执行 BOF",
+          "description": "执行一个 BOF 文件",
+          "params": [
+            {
+              "name": "bof_file",
+              "type": "file",
+              "label": "BOF 文件",
+              "required": true,
+              "accept": ".o",
+              "description": "选择要执行的 BOF 文件"
+            },
+            {
+              "name": "args",
+              "type": "text",
+              "label": "命令行参数",
+              "required": false,
+              "default": "",
+              "description": "传递给 BOF 的参数；默认按 Cobalt Strike 惯例整串单参（BOF 侧 entrypoint(char*, int) 自行解析）"
+            },
+            {
+              "name": "zlab_args",
+              "type": "checkbox",
+              "label": "Z-Labs 多参数模式",
+              "required": false,
+              "default": false,
+              "description": "勾选后按空白拆分 args 逐个传参（bof-launcher 前缀类型：i: u32、s: u16、str:/z: 字符串），适配 Z-Labs bofparam 风格 BOF"
+            }
+          ]
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "bof-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/bof-v0.3.0/bof-linux-arm64.node",
+          "sha256": "b9d4274322e9a7270d59c0d4686c4e86311dec0649a931cdcbff1078b0e462a0",
+          "size": 229504
+        },
+        "linux-x64": {
+          "filename": "bof-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/bof-v0.3.0/bof-linux-x64.node",
+          "sha256": "cd2796e26dcae7154a679031a0bcf8bc434bf940f93fd0378b76bca85cf6c191",
+          "size": 234720
+        }
+      }
+    },
+    {
+      "name": "docker_detect",
+      "label": "Docker 环境检测",
+      "description": "检测目标是否运行在容器中，支持 /.dockerenv、/run/.containerenv、cgroup、mountinfo、环境变量、pid1 等多维度检测，输出 Runtime hints（docker/podman/kubernetes/lxc）",
+      "version": "3.1.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.1.0",
+      "methods": [
+        {
+          "name": "detect",
+          "label": "Docker 检测",
+          "description": "检测当前环境是否为 Docker 容器",
+          "params": []
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "docker_detect-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.1.0/docker_detect-linux-arm64.node",
+          "sha256": "288957db328bd50b07fd67fbbd6214a8241390093d42688215ee1871b8923650",
+          "size": 23376
+        },
+        "linux-x64": {
+          "filename": "docker_detect-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.1.0/docker_detect-linux-x64.node",
+          "sha256": "770f63d872719b6a44a2d805cac1f5e3783f0fbe79955f8d3114eb46475bc308",
+          "size": 23728
         }
       }
     }
