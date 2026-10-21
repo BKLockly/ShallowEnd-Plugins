@@ -61,6 +61,29 @@ jobs:
             (cd "$dir" && zig build test --summary all)
           done
 
+      # node 冒烟：真加载 .node 执行导出方法。zig build test 对 napi 层只做
+      # 语义分析不执行，内存类 bug（如双重释放）只有真跑才暴露。
+      - name: Node smoke tests
+        run: |
+          set -euo pipefail
+          for dir in plugins/*/; do
+            [ -f "$dir/plugin.json" ] || continue
+            name=$(python3 -c "import json;print(json.load(open('$dir/plugin.json'))['name'])")
+            ptype=$(python3 -c "import json;print(json.load(open('$dir/plugin.json')).get('type','native'))")
+            echo "== node smoke: $name ($ptype)"
+            if [ "$ptype" = "js" ]; then
+              make -C "$dir" build-all
+              make -C "$dir" test
+            else
+              # 不 rm *.node：smoke 与 release 构建同 target/optimize，zig 缓存命中时
+              # install 步不会重建文件，rm 掉会让 release 的 mv 失败（见 AGENTS.md 坑点 4）
+              (cd "$dir" && zig build -Dtarget=x86_64-linux-gnu -Doptimize=ReleaseSmall)
+              if [ -f "$dir/test.js" ]; then
+                (cd "$dir" && node test.js)
+              fi
+            fi
+          done
+
       - name: Build & release new plugin versions
         env:
           GH_TOKEN: ${{ github.token }}
