@@ -161,6 +161,42 @@ test "execFd reports timeout and kills the process" {
     try std.testing.expect(result.failed);
 }
 
+// 回归：孙进程持有管道写端时拖干循环不得无限阻塞。直接子进程 exec 的 sleep
+// 被超时 SIGKILL 后，后台孙进程仍握着写端，EOF 不来——修复前 read 无限阻塞
+// 到孙进程退出（sleep 15），修复后拖干最多再等 2s 必须返回。
+test "execFd drain gives up when a grandchild holds the pipe write end" {
+    if (comptime !runner.is_linux) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    const linux = std.os.linux;
+
+    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .limited(8 << 20));
+    defer allocator.free(bin);
+
+    const fd = try runner.createMemfd(bin);
+    defer _ = linux.close(fd);
+    const argv = try LinuxCtx.buildArgv(allocator, "sh", &.{ "-c", "sleep 15 & exec sleep 15" });
+    defer LinuxCtx.freeArgv(allocator, argv);
+    const envp = try runner.buildEnvp(allocator);
+    defer allocator.free(envp);
+
+    const clk: std.c.clockid_t = if (comptime runner.is_linux)
+        @as(std.os.linux.clockid_t, .MONOTONIC)
+    else
+        1;
+    var ts: std.c.timespec = undefined;
+    _ = std.c.clock_gettime(clk, &ts);
+    const start_ns = @as(i128, ts.sec) * std.time.ns_per_s + ts.nsec;
+
+    const result = try runner.execFd(allocator, fd, argv, envp, 1);
+    defer allocator.free(result.output);
+
+    _ = std.c.clock_gettime(clk, &ts);
+    const elapsed_s = @divTrunc(@as(i128, ts.sec) * std.time.ns_per_s + ts.nsec - start_ns, std.time.ns_per_s);
+    try std.testing.expect(result.timed_out);
+    // 修复前会阻塞到孙进程退出（~15s）；有界拖干应在 ~3s（1s 超时 + 2s 拖干）返回
+    try std.testing.expect(elapsed_s < 10);
+}
+
 test "createAnonFile leaves no path behind" {
     if (comptime !runner.is_linux) return error.SkipZigTest;
     const allocator = std.testing.allocator;

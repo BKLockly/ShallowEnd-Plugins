@@ -1,6 +1,6 @@
 .{
     .name = .load_elf,
-    .version = "0.1.1",
+    .version = "0.1.2",
     .fingerprint = 0x8069ad1a8fa4c605,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
