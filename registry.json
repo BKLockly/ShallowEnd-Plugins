@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-10-21T17:06:22Z",
+  "updated_at": "2026-10-22T16:17:30Z",
   "plugins": [
     {
       "name": "hello",
@@ -642,6 +642,39 @@
       }
     },
     {
+      "name": "docker_detect",
+      "label": "Docker 环境检测",
+      "description": "检测目标是否运行在容器中，支持 /.dockerenv、/run/.containerenv、cgroup、mountinfo、环境变量、pid1 等多维度检测，输出 Runtime hints（docker/podman/kubernetes/lxc）",
+      "version": "3.1.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.1.0",
+      "methods": [
+        {
+          "name": "detect",
+          "label": "Docker 检测",
+          "description": "检测当前环境是否为 Docker 容器",
+          "params": []
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "docker_detect-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.1.0/docker_detect-linux-arm64.node",
+          "sha256": "288957db328bd50b07fd67fbbd6214a8241390093d42688215ee1871b8923650",
+          "size": 23376
+        },
+        "linux-x64": {
+          "filename": "docker_detect-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.1.0/docker_detect-linux-x64.node",
+          "sha256": "770f63d872719b6a44a2d805cac1f5e3783f0fbe79955f8d3114eb46475bc308",
+          "size": 23728
+        }
+      }
+    },
+    {
       "name": "bof",
       "label": "BOF Launcher",
       "description": "加载并执行 BOF 对象文件；Linux 目标加载 ELF relocatable（推荐 Z-Labs BOF 集合，COFF 仅 Windows 宿主）；libuv 线程池异步执行（返回 Promise），不阻塞目标机 Node 事件循环",
@@ -687,48 +720,15 @@
       "artifacts": {
         "linux-arm64": {
           "filename": "bof-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/bof-v0.3.0/bof-linux-arm64.node",
-          "sha256": "b9d4274322e9a7270d59c0d4686c4e86311dec0649a931cdcbff1078b0e462a0",
-          "size": 229504
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/bof-v0.3.1/bof-linux-arm64.node",
+          "sha256": "9d40bf9db14f9c58831ca04dc52748e3ddd2a6596f6bca3adee240a0f339c433",
+          "size": 224184
         },
         "linux-x64": {
           "filename": "bof-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/bof-v0.3.0/bof-linux-x64.node",
-          "sha256": "cd2796e26dcae7154a679031a0bcf8bc434bf940f93fd0378b76bca85cf6c191",
-          "size": 234720
-        }
-      }
-    },
-    {
-      "name": "docker_detect",
-      "label": "Docker 环境检测",
-      "description": "检测目标是否运行在容器中，支持 /.dockerenv、/run/.containerenv、cgroup、mountinfo、环境变量、pid1 等多维度检测，输出 Runtime hints（docker/podman/kubernetes/lxc）",
-      "version": "3.1.0",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "type": "native",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.1.0",
-      "methods": [
-        {
-          "name": "detect",
-          "label": "Docker 检测",
-          "description": "检测当前环境是否为 Docker 容器",
-          "params": []
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "docker_detect-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.1.0/docker_detect-linux-arm64.node",
-          "sha256": "288957db328bd50b07fd67fbbd6214a8241390093d42688215ee1871b8923650",
-          "size": 23376
-        },
-        "linux-x64": {
-          "filename": "docker_detect-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.1.0/docker_detect-linux-x64.node",
-          "sha256": "770f63d872719b6a44a2d805cac1f5e3783f0fbe79955f8d3114eb46475bc308",
-          "size": 23728
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/bof-v0.3.1/bof-linux-x64.node",
+          "sha256": "d388db3845110e1c8229cd50d06f307d746029d6f7ac4719b5be746483319770",
+          "size": 228824
         }
       }
     }
