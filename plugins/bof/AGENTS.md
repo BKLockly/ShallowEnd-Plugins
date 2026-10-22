@@ -31,6 +31,10 @@ node test.js                # Node 冒烟：垃圾 COFF 须以 [ERRO] 文本 res
 - **传参两模式**：默认 CS 单 blob（整串一次 `bofArgsAdd`）；`zlab_args` 勾选后逐 token `bofArgsAdd`
   （`i:`/`s:`/`str:`/`z:` 前缀由 bof-launcher 解析）。`args` 为空一律不加参数。
 - **无法超时杀死**：BOF 在当前进程内执行，卡死占住 worker 线程且 Promise 永不返回——README 已声明。
+- **对象格式是编译期分支**：`Bof.load` 按 `builtin.os.tag` 走 loadElf/loadCoff——Linux 宿主只吃
+  ELF relocatable（Z-Labs 集合的 `*.elf.*.o`），CS 风格 COFF 在 Linux 上恒解析失败。勿再按"BOF=COFF"排查。
+- **必须 bofLauncherInit()**（v0.3.1 修复）：未初始化时 bofObjectInitFromMemory 恒 -1，且 init 失败
+  与格式错误同样报 -1——排查时先确认 init。测试用 Z-Labs 集合真 BOF，勿只测垃圾输入。
 - **平台**：仅 Linux x64/aarch64；bof-launcher 静态库与目标无关，产物按 gnu 链接（v0.3.0 起，
   musl 产物会 DT_NEEDED "libc.so" 在 glibc 靶机无法加载——历史 v0.2.0 release 有此问题）。
 - **Clean:** `rm -f bof.node` after dev build.

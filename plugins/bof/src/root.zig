@@ -9,6 +9,16 @@ const c = @cImport({
     @cInclude("bof_launcher_api.h");
 });
 
+/// bof-launcher 要求先 bofLauncherInit() 才能加载对象（未初始化时
+/// bofObjectInitFromMemory 恒返回 -1）；进程内只初始化一次。
+var launcher_init_flag = std.atomic.Value(bool).init(false);
+
+fn ensureLauncherInit() void {
+    if (!launcher_init_flag.swap(true, .seq_cst)) {
+        _ = c.bofLauncherInit();
+    }
+}
+
 // bofArgsAdd 的 C 原型收 [*c]u8（可变指针），字符串一律持 []u8
 fn optString(call: tokota.Call, params: tokota.Object, key: [:0]const u8, allocator: std.mem.Allocator) !?[]u8 {
     const val = params.get(key) catch return null;
@@ -36,6 +46,7 @@ fn splitArgs(allocator: std.mem.Allocator, text: []const u8) ![][]u8 {
 
 pub fn executeBof(call: tokota.Call) !tokota.Promise {
     const allocator = std.heap.c_allocator;
+    ensureLauncherInit();
     const args = try call.argsAs(.{tokota.Val});
     const params = args[0].object(call.env);
 

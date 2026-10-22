@@ -14,9 +14,17 @@
 两种传参模式对应社区两类 BOF 约定：公共 CS 风格 BOF 用默认整串；Z-Labs 自家
 （`bofparam` 风格）BOF 勾选多参模式。`args` 为空时两种模式都不传参。
 
+## 对象格式（重要）
+
+bof-launcher 的加载器是**编译期分支**：Linux 宿主只加载 **ELF relocatable**（`.elf` 目标文件），
+COFF 仅 Windows 宿主可用——公共 CS 风格 COFF 在 Linux 靶机上永远加载不了。可直接使用的现成
+BOF：[Z-Labs 官方集合](https://github.com/The-Z-Labs/bof-launcher)（`bofs/` 目录，zig 0.15.1 构建，
+产物如 `whoami.elf.x64.o`），其参数用 `bofparam` 前缀语法（配合 `zlab_args` 勾选）。
+另需 `bofLauncherInit()`（v0.3.1 修复：未初始化时加载恒失败）。
+
 ## 行为
 
-- v0.3.0 起 COFF 加载与执行在 **libuv 线程池异步执行**（返回 Promise），不再阻塞目标机 Node 事件循环。
+- v0.3.0 起 COFF/ELF 加载与执行在 **libuv 线程池异步执行**（返回 Promise），不再阻塞目标机 Node 事件循环。
 - 解析失败 / 运行失败以 `[ERRO]` 结果文本 resolve（是工具结果，不是异常）。
 - **固有限制**：BOF 在当前进程内执行，没有子进程可 kill——卡死的 BOF 会占住一个 worker 线程且
   Promise 永不返回（事件循环与其他功能不受影响，但该次调用无法恢复）。请只运行可信 BOF。
