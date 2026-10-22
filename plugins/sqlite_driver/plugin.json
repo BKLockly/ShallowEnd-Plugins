@@ -2,7 +2,7 @@
   "name": "sqlite_driver",
   "label": "SQLite 驱动",
   "description": "SQLite 数据库驱动（sql.js asm.js 纯 JS bundle），供推送目标机内存加载（dbDriverLoad）；整库内存打开，run 后自动写回源文件",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "BKLockly",
   "risk_level": "low",
   "type": "js",
