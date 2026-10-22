@@ -644,13 +644,13 @@
     {
       "name": "bof",
       "label": "BOF Launcher",
-      "description": "加载并执行 Beacon Object Files (BOF)；v0.3.0 起在 libuv 线程池异步执行（返回 Promise），不再阻塞目标机 Node 事件循环",
-      "version": "0.3.0",
+      "description": "加载并执行 BOF 对象文件；Linux 目标加载 ELF relocatable（推荐 Z-Labs BOF 集合，COFF 仅 Windows 宿主）；libuv 线程池异步执行（返回 Promise），不阻塞目标机 Node 事件循环",
+      "version": "0.3.1",
       "author": "BKLockly",
       "risk_level": "high",
       "type": "native",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/bof-v0.3.0",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/bof-v0.3.1",
       "methods": [
         {
           "name": "executeBof",
@@ -663,7 +663,7 @@
               "label": "BOF 文件",
               "required": true,
               "accept": ".o",
-              "description": "选择要执行的 BOF 文件"
+              "description": "选择要执行的 BOF 对象文件（Linux 目标为 ELF relocatable，如 Z-Labs 集合的 whoami.elf.x64.o；CS 风格 COFF 仅 Windows 宿主可用）"
             },
             {
               "name": "args",
