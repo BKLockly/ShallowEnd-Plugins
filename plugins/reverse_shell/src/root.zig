@@ -51,9 +51,7 @@ pub fn connect(call: tokota.Call) !tokota.Promise {
     const params = args[0].object(call.env);
 
     const host_raw = (try optString(call, params, "host", allocator)) orelse return error.HostRequired;
-    // getaddrinfo 需要 NUL 结尾；host_z 按 session.zig 约定派生后不 free
-    const host = try allocator.dupeZ(u8, host_raw);
-    errdefer allocator.free(host);
+    defer allocator.free(host_raw);
 
     var port: u16 = 0;
     if (params.getT("port", f64)) |fv| {
@@ -74,6 +72,9 @@ pub fn connect(call: tokota.Call) !tokota.Promise {
         if (fv > 0) timeout_s = @intFromFloat(@min(fv, max_connect_timeout_s));
     } else |_| {}
 
+    // getaddrinfo 需要 NUL 结尾；host 派生后按 session.zig 约定不 free
+    // （子进程 COW 只读），仅在 pipe 创建失败等错误路径随 errdefer 释放
+    const host = try allocator.dupeZ(u8, host_raw);
     const pipe = try allocator.create(SessionPipe);
     errdefer allocator.destroy(pipe);
     errdefer allocator.free(host);
