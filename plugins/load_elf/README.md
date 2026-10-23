@@ -7,14 +7,14 @@
 ## 工作原理
 
 1. **主路径（零落地）**：`memfd_create("", MFD_CLOEXEC)` 创建匿名内存文件（名字传空串，`/proc/<pid>/fd` 中仅显示 `/memfd:` 前缀）→ 写入 ELF → fork → 子进程 `execveat(fd, "", argv, envp, AT_EMPTY_PATH)`。
-2. **降级路径（同样无残留）**：memfd 不可用（内核 < 3.17 或被 seccomp 拦截）时，在 `/tmp` 创建 0700 临时文件写入 ELF 后**立即 unlink**，仅以 fd 引用执行（`execveat` + `AT_EMPTY_PATH`）——即使进程被 SIGKILL 也不会留下任何路径。
+2. **降级路径（同样无残留）**：memfd 不可用（内核 < 3.17 或被 seccomp 拦截）时先尝试 **O_TMPFILE**——在 `/tmp` 打开一个从不关联任何路径名的无名 inode（内核 ≥ 3.11 且文件系统支持）；仍不可用（老内核或 overlayfs 等不支持）再在 `/tmp` 创建 0700 临时文件写入 ELF 后**立即 unlink**。两种降级仅以 fd 引用执行（`execveat` + `AT_EMPTY_PATH`）——即使进程被 SIGKILL 也不会留下任何路径。
 3. **exec 降级链**（子进程内）：`execveat(AT_EMPTY_PATH)` → 老内核无 execveat 时退 `execve("/proc/self/fd/N")`（跟随 procfs symlink）→ 全败 exit 126。
 4. **异步执行**：fork + waitpid 在 libuv 线程池执行（返回 Promise），不阻塞目标机 Node 事件循环，webshell 其他请求不受影响。
-5. stdout/stderr 合并收集，超时 SIGKILL（拖干管道残余输出后 waitpid 回收，不留僵尸）。
+5. stdout/stderr 合并收集，超时**按进程组 SIGKILL**（子进程 fork 后 `setsid` 自成进程组，`kill(-pid)` 组杀整组——ELF 拉起的孙进程一并收割；拖干管道残余输出后 waitpid 回收，不留僵尸）。
 
 环境变量默认继承目标机 Node 进程的 environ，并强制追加 `NO_COLOR=1`。
 
-内核要求：memfd 路径 ≥ 3.19（2015）；Docker 默认 seccomp 白名单允许 `memfd_create` / `execveat`。
+内核要求：memfd 路径 ≥ 3.19（2015）；O_TMPFILE 路径 ≥ 3.11（2012，依赖 `/tmp` 所在文件系统支持，不支持时自动跳过该档位）；Docker 默认 seccomp 白名单允许 `memfd_create` / `execveat`。
 
 ## 方法
 
@@ -36,7 +36,7 @@ argv[0] 固定为 `elf`（file 参数经 payload 解码后文件名被 Buffer �
 [INFO] exit code: 0
 ```
 
-- `mode=memfd (in-memory)` / `mode=anon-tmpfile (memfd unavailable, unlinked before exec)` 回报实际执行路径
+- `mode=memfd (in-memory)` / `mode=otmp (memfd unavailable, O_TMPFILE, never named)` / `mode=anon-tmpfile (memfd unavailable, unlinked before exec)` 回报实际执行路径
 - 输出超过 1MB 截断并附加 `[WARN] output truncated`
 - 超时：`[WARN] process exceeded run timeout (60s) and was killed`
 - 非 0 退出：`[WARN] exited with code N`

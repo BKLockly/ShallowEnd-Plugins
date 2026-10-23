@@ -11,11 +11,13 @@ pub const is_linux = builtin.os.tag == .linux;
 
 pub const ExecMode = enum {
     memfd,
+    otmp,
     anon_file,
 
     pub fn label(self: ExecMode) []const u8 {
         return switch (self) {
             .memfd => "memfd (in-memory)",
+            .otmp => "otmp (memfd unavailable, O_TMPFILE, never named)",
             .anon_file => "anon-tmpfile (memfd unavailable, unlinked before exec)",
         };
     }
@@ -146,6 +148,21 @@ pub fn createMemfd(bytes: []const u8) !std.posix.fd_t {
     return fd;
 }
 
+/// O_TMPFILE 承载 ELF（memfd 与具名匿名 tmpfile 之间的降级层）：/tmp 下以
+/// O_TMPFILE|O_DIRECTORY|O_RDWR 打开一个从不关联任何路径名的无名 inode，
+/// 写满 bytes 返回 fd——全生命周期零落名，被 SIGKILL 也不留任何痕迹。
+/// fd 可直接 execveat(AT_EMPTY_PATH)，无需 /proc 路径。
+/// 内核 < 3.11 或 /tmp 所在文件系统不支持时 openat 失败，调用方继续降级。
+pub fn createOtmpFile(bytes: []const u8) !std.posix.fd_t {
+    const linux = std.os.linux;
+    const rc = linux.openat(linux.AT.FDCWD, "/tmp", .{ .ACCMODE = .RDWR, .DIRECTORY = true, .TMPFILE = true }, 0o700);
+    if (@as(isize, @bitCast(rc)) < 0) return error.OtmpUnavailable;
+    const fd: std.posix.fd_t = @intCast(rc);
+    errdefer _ = linux.close(fd);
+    try writeAllFd(fd, bytes);
+    return fd;
+}
+
 /// 匿名 tmpfile 承载 ELF（memfd 被禁时的降级路径）：/tmp 下 0700 创建，
 /// 写满后立即 unlink——仅剩 fd 引用，被 SIGKILL 也不留路径。
 pub fn createAnonFile(bytes: []const u8) !std.posix.fd_t {
@@ -174,7 +191,9 @@ fn monoNs() i128 {
     return @as(i128, ts.sec) * std.time.ns_per_s + ts.nsec;
 }
 
-/// fork + execveat 执行 fd 指向的可执行镜像，stdout/stderr 合并收集，超时 SIGKILL。
+/// fork + execveat 执行 fd 指向的可执行镜像，stdout/stderr 合并收集，超时按进程组 SIGKILL。
+/// 子进程 fork 后立即 setsid 自成新进程组（pgid=pid），ELF 拉起的孙进程继承同组，
+/// 超时 kill(-pid) 组杀整组——孙进程一并收割，不再残留持管道的孤儿。
 /// argv/envp 必须以 null 结尾。子进程 exec 降级链：execveat(AT_EMPTY_PATH) →
 /// execve("/proc/self/fd/N")（老内核无 execveat 时跟随 procfs symlink）→
 /// exit 126，父进程侧转 error.ExecFailed（fd 内容不是可执行镜像等致命场景）。
@@ -199,7 +218,10 @@ pub fn execFd(
     }
 
     if (pid == 0) {
-        // 子进程：stdout/stderr → 管道，exec 仅在失败时返回（CLOEXEC fd exec 成功后自动关闭）
+        // 子进程：脱离父进程会话自成新进程组（pgid=pid），父进程超时即可
+        // kill(-pid) 组杀整组（孙进程一并终止）。失败忽略（不影响主流程）。
+        _ = linux.setsid();
+        // stdout/stderr → 管道，exec 仅在失败时返回（CLOEXEC fd exec 成功后自动关闭）
         _ = linux.dup2(fds[1], 1);
         _ = linux.dup2(fds[1], 2);
         _ = linux.close(fds[0]);
@@ -246,9 +268,11 @@ pub fn execFd(
         }
     }
 
-    if (timed_out) _ = linux.kill(@intCast(pid), .KILL);
-    // 拖干残余输出（kill 后管道里可能还有数据）。孙进程可能继承写端导致
-    // EOF 永不来，read 会无限阻塞，故拖干最多再等 2s（waitpid 仍回收直接子进程）。
+    // 负数 pid = 组杀整组（子进程 setsid 后 pgid=pid，孙进程一并收割）
+    if (timed_out) _ = linux.kill(-@as(linux.pid_t, @intCast(pid)), .KILL);
+    // 拖干残余输出（kill 后管道里可能还有数据）。自行二次 fork + setsid 逃脱
+    // 进程组的进程仍可能持有写端导致 EOF 永不来，read 会无限阻塞，故拖干
+    // 最多再等 2s（waitpid 仍回收直接子进程）。
     const drain_deadline_ns = monoNs() + 2 * std.time.ns_per_s;
     while (true) {
         const now = monoNs();

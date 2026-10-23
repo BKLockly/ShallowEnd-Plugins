@@ -53,7 +53,7 @@ pub fn execElf(call: tokota.Call) !tokota.Promise {
     }
 
     // 耗时的 fork+waitpid 放到 libuv 线程池（AsyncWorker）执行，导出 Promise，
-    // 不阻塞目标机 Node 事件循环；fd 创建（memfd/降级 tmpfile）留在同步段。
+    // 不阻塞目标机 Node 事件循环；fd 创建（memfd/otmp/降级 tmpfile）留在同步段。
     const task = try ElfTask.prepare(allocator, elf_bytes, args_text, argv0_explicit, elf_filename, timeout_s);
     errdefer task.deinit(false);
 
@@ -83,8 +83,8 @@ const ElfTask = struct {
     // 失败时为 null，由 complete 走 reject。
     output: ?[]const u8 = null,
 
-    // 同步段：创建承载 ELF 的 fd（memfd 优先，被禁时降级匿名 tmpfile）、
-    // 组装 argv/envp。argv[0] 决议顺序见 runner.resolveArgv0。
+    // 同步段：创建承载 ELF 的 fd（降级链 memfd → O_TMPFILE → 匿名 tmpfile，
+    // 全程不落可复现路径）、组装 argv/envp。argv[0] 决议顺序见 runner.resolveArgv0。
     fn prepare(
         allocator: std.mem.Allocator,
         elf_bytes: []const u8,
@@ -98,6 +98,9 @@ const ElfTask = struct {
         const fd, const mode = blk: {
             if (runner.createMemfd(elf_bytes)) |fd| {
                 break :blk .{ fd, runner.ExecMode.memfd };
+            } else |_| {}
+            if (runner.createOtmpFile(elf_bytes)) |fd| {
+                break :blk .{ fd, runner.ExecMode.otmp };
             } else |_| {}
             const fd = try runner.createAnonFile(elf_bytes);
             break :blk .{ fd, runner.ExecMode.anon_file };

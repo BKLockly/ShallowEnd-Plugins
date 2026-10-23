@@ -197,6 +197,68 @@ test "execFd drain gives up when a grandchild holds the pipe write end" {
     try std.testing.expect(elapsed_s < 10);
 }
 
+// 回归：超时必须按进程组收割。子进程 fork 后 setsid 自成新进程组（pgid=pid），
+// 后台孙进程继承同组——修复前 SIGKILL 只杀直接子进程，孙进程存活满 30s；
+// 修复后 kill(-pid) 组杀整组，孙进程数秒内必死。孙进程 pid 由 sh 预先写入
+// 固定路径，返回后轮询 /proc/<pid>/cmdline 验证（zombie/消失均算死亡）。
+test "execFd timeout reaps the whole process group including grandchildren" {
+    if (comptime !runner.is_linux) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    const linux = std.os.linux;
+
+    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .limited(8 << 20));
+    defer allocator.free(bin);
+
+    // 固定 pid 文件路径：测试前删残留、结束后清理
+    const pid_path = "/tmp/le-gc-pgroup-test";
+    _ = linux.unlink(pid_path);
+    defer _ = linux.unlink(pid_path);
+
+    const fd = try runner.createMemfd(bin);
+    defer _ = linux.close(fd);
+    const script = "sleep 30 & echo $! > /tmp/le-gc-pgroup-test ; exec sleep 30";
+    const argv = try LinuxCtx.buildArgv(allocator, "sh", &.{ "-c", script });
+    defer LinuxCtx.freeArgv(allocator, argv);
+    const envp = try runner.buildEnvp(allocator);
+    defer allocator.free(envp);
+
+    const result = try runner.execFd(allocator, fd, argv, envp, 1);
+    defer allocator.free(result.output);
+    try std.testing.expect(result.timed_out);
+
+    // 读取孙进程 pid（sh 在超时杀死它之前早已写好该文件）
+    const pid_fd = try std.posix.openat(std.posix.AT.FDCWD, pid_path, .{ .ACCMODE = .RDONLY }, 0);
+    defer _ = linux.close(pid_fd);
+    var pid_buf: [32]u8 = undefined;
+    const pid_len = try std.posix.read(pid_fd, &pid_buf);
+    const gc_pid = std.fmt.parseInt(i32, std.mem.trim(u8, pid_buf[0..pid_len], " \t\r\n"), 10) catch
+        return error.Unexpected;
+    try std.testing.expect(gc_pid > 0);
+
+    // 轮询最多 3s：/proc/<pid>/cmdline 打不开（已退出且被收殓）或读出为空
+    // （zombie，SIGKILL 已送达仅剩记档）均算死亡；存活进程 cmdline 非空。
+    // 修复前孙进程存活 30s，此处 3s 内必超时失败。
+    var dead = false;
+    var waited_ms: u32 = 0;
+    while (waited_ms < 3000) : (waited_ms += 50) {
+        var proc_buf: [64]u8 = undefined;
+        const proc_path = std.fmt.bufPrint(&proc_buf, "/proc/{d}/cmdline", .{gc_pid}) catch unreachable;
+        if (std.posix.openat(std.posix.AT.FDCWD, proc_path, .{ .ACCMODE = .RDONLY }, 0)) |pfd| {
+            defer _ = linux.close(pfd);
+            var cmd_buf: [64]u8 = undefined;
+            const n = std.posix.read(pfd, &cmd_buf) catch 0;
+            if (n == 0) dead = true;
+        } else |_| {
+            dead = true; // ENOENT：进程已彻底消失
+        }
+        if (dead) break;
+        var req: std.c.timespec = .{ .sec = 0, .nsec = 50 * std.time.ns_per_ms };
+        var rem: std.c.timespec = undefined;
+        _ = std.c.nanosleep(&req, &rem);
+    }
+    try std.testing.expect(dead);
+}
+
 test "createAnonFile leaves no path behind" {
     if (comptime !runner.is_linux) return error.SkipZigTest;
     const allocator = std.testing.allocator;
@@ -210,4 +272,19 @@ test "createAnonFile leaves no path behind" {
     const n = try std.posix.read(fd, &buf);
     try std.testing.expectEqualStrings("data", buf[0..n]);
     _ = allocator;
+}
+
+// O_TMPFILE 降级层：/tmp 下打开从不落名的无名 inode，写满后 fd 可读回校验
+//（memfd 与具名匿名 tmpfile 之间的中间降级档位，全生命周期零路径）。
+test "createOtmpFile writes readable data with no name" {
+    if (comptime !runner.is_linux) return error.SkipZigTest;
+    const linux = std.os.linux;
+
+    const fd = try runner.createOtmpFile("otmp-data");
+    defer _ = linux.close(fd);
+    // 无名 inode 仅由 fd 引用；0.16 posix 无 pread，lseek+read 等价
+    if (linux.errno(linux.lseek(fd, 0, linux.SEEK.SET)) != .SUCCESS) return error.Unexpected;
+    var buf: [16]u8 = undefined;
+    const n = try std.posix.read(fd, &buf);
+    try std.testing.expectEqualStrings("otmp-data", buf[0..n]);
 }
