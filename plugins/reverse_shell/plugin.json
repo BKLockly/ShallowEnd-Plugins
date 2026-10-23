@@ -1,0 +1,43 @@
+{
+  "name": "reverse_shell",
+  "label": "反弹 Shell",
+  "description": "在目标机派生连回 listener 的 shell 会话；native 变体零依赖（socket+dup2+/bin/sh），另有 bash /dev/tcp、python3 pty、nc -e 解释器变体；会话 setsid 驻留（目标进程退出不受影响）；libuv 线程池异步执行（返回 Promise），不阻塞目标机 Node 事件循环",
+  "version": "0.1.0",
+  "author": "BKLockly",
+  "risk_level": "high",
+  "methods": [
+    {
+      "name": "connect",
+      "label": "反弹连接",
+      "description": "连接 listener 并派生 shell 会话（native 变体返回真实连接结果；解释器变体返回派生结果）",
+      "params": [
+        {
+          "name": "host",
+          "type": "text",
+          "label": "listener 地址（IP 或域名）",
+          "required": true
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "label": "listener 端口",
+          "required": true
+        },
+        {
+          "name": "variant",
+          "type": "text",
+          "label": "变体（native | bash | python | nc）",
+          "required": false,
+          "default": "native",
+          "description": "native：目标进程内 socket+dup2+/bin/sh -i，零依赖；bash：/dev/tcp（需 bash）；python：python3 pty.spawn（需 python3）；nc：nc -e（需传统 netcat，openbsd nc 无 -e）"
+        },
+        {
+          "name": "timeout",
+          "type": "number",
+          "label": "connect 超时秒数（默认 10，上限 120）",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
