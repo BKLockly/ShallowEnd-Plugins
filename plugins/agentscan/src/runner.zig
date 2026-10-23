@@ -114,6 +114,28 @@ pub fn decompressPayload(allocator: std.mem.Allocator, gz: []const u8) ![]u8 {
     return out.toOwnedSlice(allocator);
 }
 
+fn writeAllFd(fd: std.posix.fd_t, bytes: []const u8) !void {
+    const linux = std.os.linux;
+    var off: usize = 0;
+    while (off < bytes.len) {
+        const rc = linux.write(fd, bytes.ptr + off, bytes.len - off);
+        const n = @as(isize, @bitCast(rc));
+        if (n <= 0) return error.FdWriteFailed;
+        off += @intCast(n);
+    }
+}
+
+/// memfd 承载 payload（空名 + CLOEXEC：/proc 中仅显示 "/memfd:" 前缀），写满 bytes。
+pub fn createMemfd(bytes: []const u8) !std.posix.fd_t {
+    const linux = std.os.linux;
+    const rc = linux.memfd_create("", linux.MFD.CLOEXEC);
+    if (@as(isize, @bitCast(rc)) < 0) return error.MemfdUnavailable;
+    const fd: std.posix.fd_t = @intCast(rc);
+    errdefer _ = linux.close(fd);
+    try writeAllFd(fd, bytes);
+    return fd;
+}
+
 pub const ExecResult = struct {
     output: []u8,
     timed_out: bool = false,
@@ -131,10 +153,13 @@ fn monoNs() i128 {
     return @as(i128, ts.sec) * std.time.ns_per_s + ts.nsec;
 }
 
-/// fork + execve 执行 payload，stdout/stderr 合并收集，超时 SIGKILL。
-/// argv[0] 必须是可执行文件路径；cwd 非空时子进程先 chdir（上游会往 CWD 落报告文件，
-/// 传专用临时目录可把产物圈住）。所有字符串在 fork 前构建，子进程分支零分配。
-pub fn exec(allocator: std.mem.Allocator, argv: []const []const u8, run_timeout_s: u32, cwd: ?[:0]const u8) !ExecResult {
+/// fork + exec 执行 payload，stdout/stderr 合并收集，超时 SIGKILL。
+/// fd 非空时经 execveat(AT_EMPTY_PATH) 执行 memfd 中的镜像（零落地），
+/// 老内核无 execveat 时经 /proc/self/fd 符号链接降级；fd 为 null 时
+/// execve(argv[0]) 走常规路径（如 /bin/rm 清理）。cwd 非空时子进程先 chdir
+/// （上游会往 CWD 落报告文件，传专用临时目录可把产物圈住）。
+/// 所有字符串在 fork 前构建，子进程分支零分配。
+pub fn exec(allocator: std.mem.Allocator, fd: ?std.posix.fd_t, argv: []const []const u8, run_timeout_s: u32, cwd: ?[:0]const u8) !ExecResult {
     const linux = std.os.linux;
 
     var argv_z = try allocator.alloc([:0]u8, argv.len);
@@ -163,12 +188,20 @@ pub fn exec(allocator: std.mem.Allocator, argv: []const []const u8, run_timeout_
     }
 
     if (pid == 0) {
-        // 子进程：stdout/stderr → 管道，execve 仅在失败时返回
+        // 子进程：stdout/stderr → 管道，exec 仅在失败时返回
         if (cwd) |c| _ = linux.chdir(c.ptr);
         _ = linux.dup2(fds[1], 1);
         _ = linux.dup2(fds[1], 2);
         _ = linux.close(fds[0]);
         _ = linux.close(fds[1]);
+        if (fd) |payload_fd| {
+            _ = linux.execveat(payload_fd, "", @ptrCast(argv_c.ptr), @ptrCast(env_c.ptr), .{ .SYMLINK_NOFOLLOW = false, .EMPTY_PATH = true });
+            // 老内核无 execveat 时经 procfs 符号链接降级
+            var proc_buf: [32]u8 = undefined;
+            const proc_path = std.fmt.bufPrintZ(&proc_buf, "/proc/self/fd/{d}", .{payload_fd}) catch linux.exit(127);
+            _ = linux.execve(proc_path.ptr, @ptrCast(argv_c.ptr), @ptrCast(env_c.ptr));
+            linux.exit(127);
+        }
         _ = linux.execve(argv_z[0].ptr, @ptrCast(argv_c.ptr), @ptrCast(env_c.ptr));
         linux.exit(127);
     }

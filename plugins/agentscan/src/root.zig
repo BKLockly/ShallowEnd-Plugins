@@ -101,7 +101,8 @@ const ScanTask = struct {
     cmd_args: [][]const u8,
     argv: [][]const u8,
     tmp_dir: [:0]const u8,
-    bin_path: [:0]const u8,
+    // memfd 承载 payload（零落地）；deinit 时关闭
+    payload_fd: std.posix.fd_t,
     deferred: tokota.Deferred = undefined,
     work: tokota.async.Worker = undefined,
     // execute 产物（complete resolve 后所有权移交 JS 侧字符串），
@@ -109,7 +110,8 @@ const ScanTask = struct {
     output: ?[]const u8 = null,
     err_msg: ?[]const u8 = null,
 
-    // 同步段：解压 payload、写临时文件、组装 argv。所有字段堆上分配。
+    // 同步段：解压 payload 进 memfd、建临时目录（cwd 圈定上游报告文件）、组装
+    // argv。所有字段堆上分配。
     fn prepare(allocator: std.mem.Allocator, subcommand: []const u8, cmd_args: [][]const u8) !*ScanTask {
         const linux = std.os.linux;
 
@@ -125,27 +127,13 @@ const ScanTask = struct {
         ) catch return error.TempPathOverflow;
         _ = linux.mkdir(tmp_dir, 0o700);
 
-        var bin_buf: [96]u8 = undefined;
-        const bin_path = std.fmt.bufPrintZ(&bin_buf, "{s}/payload.bin", .{tmp_dir}) catch
-            return error.TempPathOverflow;
-
-        const fd = std.posix.openat(
-            linux.AT.FDCWD,
-            bin_path,
-            .{ .ACCMODE = .WRONLY, .CREAT = true, .TRUNC = true },
-            0o700,
-        ) catch return error.PayloadWriteFailed;
-        var written: usize = 0;
-        while (written < bin_bytes.len) {
-            const rc = linux.write(fd, bin_bytes.ptr + written, bin_bytes.len - written);
-            if (@as(isize, @bitCast(rc)) <= 0) break;
-            written += rc;
-        }
-        _ = linux.close(fd);
-        if (written < bin_bytes.len) return error.PayloadWriteFailed;
+        // payload 经 memfd 内存加载，不再落盘；tmp_dir 仅作子进程 cwd 圈定上游报告文件
+        const payload_fd = runner.createMemfd(bin_bytes) catch
+            return error.MemfdUnavailable;
+        errdefer _ = linux.close(payload_fd);
 
         const argv = try allocator.alloc([]const u8, cmd_args.len + 1);
-        argv[0] = try allocator.dupeZ(u8, bin_path);
+        argv[0] = try allocator.dupeZ(u8, "agentscan");
         for (cmd_args, 0..) |a, idx| argv[idx + 1] = a;
 
         const task = try allocator.create(ScanTask);
@@ -155,7 +143,7 @@ const ScanTask = struct {
             .cmd_args = cmd_args,
             .argv = argv,
             .tmp_dir = try allocator.dupeZ(u8, tmp_dir),
-            .bin_path = try allocator.dupeZ(u8, bin_path),
+            .payload_fd = payload_fd,
         };
         return task;
     }
@@ -163,18 +151,19 @@ const ScanTask = struct {
     // 释放全部堆上状态；resolved 为 true 表示 output 字符串已移交 JS 侧。
     fn deinit(self: *ScanTask, resolved: bool) void {
         const allo = self.allocator;
+        const linux = std.os.linux;
         if (self.output) |o| {
             if (!resolved) allo.free(o);
         }
         if (self.err_msg) |m| allo.free(m);
-        // argv[0] 是 bin_path 的独立副本；argv[1..] 与 cmd_args 元素共享指针，
+        // argv[0] 是独立副本；argv[1..] 与 cmd_args 元素共享指针，
         // 元素只随 cmd_args 循环释放一次（此前两处各 free 一次构成双重释放）
         allo.free(self.argv[0]);
         allo.free(self.argv);
         for (self.cmd_args) |a| allo.free(a);
         allo.free(self.cmd_args);
         allo.free(self.tmp_dir);
-        allo.free(self.bin_path);
+        _ = linux.close(self.payload_fd);
         allo.free(self.subcommand);
         allo.destroy(self);
     }
@@ -182,15 +171,13 @@ const ScanTask = struct {
     // libuv 线程池：fork + waitpid 执行扫描（最长 600s），组装输出文本。
     fn execute(self: *ScanTask) !void {
         const allocator = self.allocator;
-        const linux = std.os.linux;
 
-        const result = runner.exec(allocator, self.argv, runner.default_run_timeout_s, self.tmp_dir) catch
+        const result = runner.exec(allocator, self.payload_fd, self.argv, runner.default_run_timeout_s, self.tmp_dir) catch
             return error.ExecFailed;
         defer allocator.free(result.output);
 
-        // 清理临时目录（含报告文件）；/bin/rm 缺失时为 best-effort
-        _ = linux.unlink(self.bin_path);
-        if (runner.exec(allocator, &.{ "/bin/rm", "-rf", self.tmp_dir }, 10, null)) |res| {
+        // 清理临时目录（含上游报告文件）；/bin/rm 缺失时为 best-effort
+        if (runner.exec(allocator, null, &.{ "/bin/rm", "-rf", self.tmp_dir }, 10, null)) |res| {
             allocator.free(res.output);
         } else |_| {}
 
