@@ -1,7 +1,7 @@
 // sql.js（SQLite C 引擎的 asm.js 纯 JS 构建）薄包装：对齐 payload 的 sqlite 消费语义。
 // payload 侧 dbDriverLoad 校验导出形状（typeof api.Database === 'function'），消费约定：
 //   const conn = new Database(filePath);        —— 同步构造，path 为目标机上的 .db 文件
-//   const rows = await conn.all(sql);           —— 行对象数组（fields 由 keys 推导）
+//   const rows = await conn.all(sql);           —— 行对象数组（fields 由 keys 推导）；多语句结果集按顺序拼接
 //   const n    = await conn.run(sql);           —— 受影响行数；写后自动持久化写回源文件
 //   conn.close();                               —— 同步，调用后连接可安全弃置
 const fs = require('fs');
@@ -49,13 +49,19 @@ class Database {
     async all(sql) {
         const db = await this._ensure();
         const results = db.exec(sql);
-        if (!results.length || !results[0].columns.length) return [];
-        const columns = results[0].columns;
-        return results[0].values.map(function (row) {
-            const obj = {};
-            for (let i = 0; i < columns.length; i++) obj[columns[i]] = row[i];
-            return obj;
-        });
+        // 多语句 SQL（如 SELECT a; SELECT b）产出多个结果集：
+        // 每个结果集按自己的列名映射，所有行按结果集顺序拼接成一个数组
+        const rows = [];
+        for (const result of results) {
+            if (!result.columns.length) continue; // 无列的结果集（DDL/写语句）跳过
+            const columns = result.columns;
+            for (const values of result.values) {
+                const obj = {};
+                for (let i = 0; i < columns.length; i++) obj[columns[i]] = values[i];
+                rows.push(obj);
+            }
+        }
+        return rows;
     }
 
     async run(sql) {

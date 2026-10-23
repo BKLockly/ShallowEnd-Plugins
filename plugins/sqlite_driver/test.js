@@ -1,5 +1,5 @@
 // 完整 roundtrip 测试：模拟 payload 的 dbDriverLoad 内存加载路径（new Function），
-// 覆盖 建表→写入→写回落盘→重开读取→Buffer 直开→空结果集 的全链路。
+// 覆盖 建表→写入→写回落盘→重开读取→Buffer 直开→空结果集→多语句结果集合并 的全链路。
 // 纯 JS（sql.js asm.js），mac/linux 均可直跑：node test.js
 const fs = require("fs");
 const path = require("path");
@@ -42,6 +42,16 @@ assert.strictEqual(typeof api.Database, "function", "exports.Database must be a 
   // 空结果集
   const none = await db.all("SELECT * FROM users WHERE name = 'nope'");
   assert.deepStrictEqual(none, []);
+
+  // 多语句结果集合并：两条 SELECT 合并在一次 all() 调用里，
+  // 行按结果集顺序拼接，每个结果集用各自的列名映射
+  const multi = await db.all(
+    "SELECT id, name FROM users ORDER BY id; SELECT name FROM users WHERE id = 2"
+  );
+  assert.strictEqual(multi.length, 3, "multi-statement rows concatenate in order");
+  assert.deepStrictEqual(multi[0], { id: 1, name: "admin" });
+  assert.deepStrictEqual(multi[1], { id: 2, name: "svc" });
+  assert.deepStrictEqual(multi[2], { name: "svc" });
 
   // 运行时写 + 再落盘
   await db.run("UPDATE users SET name = 'root' WHERE id = 1");
