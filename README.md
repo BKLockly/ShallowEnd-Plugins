@@ -3,7 +3,7 @@
 [![Build and Release](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml/badge.svg)](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Official plugin monorepo for the [ShallowEnd](https://github.com/BKLockly/ShallowEnd) marketplace. Plugins are written in Zig + [Tokota](https://github.com/kofi-q/tokota) and compiled to Node.js native addons (`.node`, N-API) — version-independent across Node runtimes. The marketplace index `registry.json` lives at the repo root and is maintained by the CI bot.
+Official plugin monorepo for the [ShallowEnd](https://github.com/BKLockly/ShallowEnd) marketplace. Plugins are written in Zig + [Tokota](https://github.com/kofi-q/tokota) and compiled to Node.js native addons (`.node`, N-API) — version-independent across Node runtimes. There is also a **js plugin type** (esbuild CJS bundles, used by the database drivers). The marketplace index `registry.json` lives at the repo root and is maintained by the CI bot.
 
 This repository is fully decoupled from the ShallowEnd main app: the app only points its `plugin_marketplace_url` setting at this repo's `registry.json`.
 
@@ -20,22 +20,28 @@ ShallowEnd-Plugins/
 │   ├── check_consistency.py  ← consistency checks (CI gate + local `just check`)
 │   ├── update_registry.py    ← registry.json updater (invoked by CI)
 │   └── update_tokota.py      ← bump the pinned tokota dependency
-├── plugins/                  ← one directory per plugin (deps resolved by the zig package manager)
-└── plugins/                  ← one directory per plugin, dir name = plugin name
+├── plugins/                  ← one directory per plugin, dir name = plugin name
 ```
 
 ## Plugins
 
+> Authoritative versions live in `registry.json`; the table below is updated with each release.
+
 | Plugin | Version | Description | Risk |
 |--------|---------|-------------|------|
-| bof | 0.2.0 | Load and execute Beacon Object Files (BOF), musl static build | high |
-| docker_detect | 3.0.1 | Detect Docker container environments | low |
-| file_compress | 0.2.0 | Gzip-compress a single file in pure Zig | low |
-| file_decompress | 0.2.1 | Decompress .gz files in pure Zig | low |
+| agentscan | 0.2.2 | Intranet MCP / A2A / LLM exposure scan (embedded AgentScan engine, memfd zero-footprint payload) | medium |
+| bof | 0.3.1 | Load and execute Beacon Object Files (BOF) | high |
+| docker_detect | 3.1.0 | Detect Docker container environments | low |
+| file_compress | 0.3.1 | Compress files/directories (tar.gz) | low |
+| file_decompress | 0.3.0 | Extract archives | low |
 | hello | 0.4.1 | Scaffold example plugin | low |
-| linux_exploit_suggester | 1.3 | Suggest kernel LPE exploits matching the target kernel | low |
-| sensitive_search | 0.14.2 | Search the target filesystem for sensitive files/credentials | medium |
-| agentscan | 0.1.0 | Intranet MCP / A2A / LLM exposure scan (embedded AgentScan engine) | medium |
+| linux_exploit_suggester | 1.3.1 | Suggest kernel LPE exploits matching the target kernel | low |
+| load_elf | 0.1.3 | Load and execute ELF binaries from memory (memfd, zero footprint) | high |
+| mysql_driver | 1.0.0 | MySQL database driver (js bundle, in-memory load) | low |
+| pg_driver | 1.0.0 | PostgreSQL database driver (js bundle, in-memory load) | low |
+| reverse_shell | 0.1.0 | Spawn a shell session connecting back to a listener (zero-dep native + interpreter variants) | high |
+| sensitive_search | 0.14.3 | Search the target filesystem for sensitive files/credentials | medium |
+| sqlite_driver | 1.0.1 | SQLite database driver (sql.js js bundle, in-memory load) | low |
 
 ## Acknowledgements
 
@@ -51,6 +57,7 @@ ShallowEnd-Plugins builds on these open-source projects — thank you! Full lice
 | [linux-exploit-suggester](https://github.com/mzet-/linux-exploit-suggester) | GPL-3.0 | CVE knowledge base of `linux_exploit_suggester` |
 | [mysql2](https://github.com/sidorares/node-mysql2) | MIT | bundled into `mysql_driver` plugin (esbuild, in-memory load) |
 | [pg](https://github.com/brianc/node-postgres) | MIT | bundled into `pg_driver` plugin (esbuild, in-memory load) |
+| [sql.js](https://github.com/sql-js/sql.js) | MIT | bundled into `sqlite_driver` plugin (esbuild, in-memory load) |
 | [esbuild](https://github.com/evanw/esbuild) | MIT | bundler for js-type driver plugins |
 
 ## Platform Matrix
@@ -62,7 +69,7 @@ ShallowEnd-Plugins builds on these open-source projects — thank you! Full lice
 | Windows x64 | `win32-x64` | `x86_64-windows-gnu` | ❌ |
 | macOS | `darwin-*` | — | ❌ |
 
-Rationale: Linux targets first; ARM Linux (cloud/containers) is free to keep. Windows has no test capacity and near-zero Node.js targets in scope; macOS builds are a local `zig build -Dtarget=...` smoke away if ever needed. **bof exception**: musl libc (`*-linux-musl`) for static linking of bof-launcher.
+Rationale: Linux targets first; ARM Linux (cloud/containers) is free to keep. Windows has no test capacity and near-zero Node.js targets in scope; macOS builds are a local `zig build -Dtarget=...` smoke away if ever needed. `bof` used musl libc for static linking of bof-launcher until v0.3.0, when everything moved back to gnu (musl artifacts fail to dlopen on glibc machines).
 
 ## Release Flow (fully automated)
 
@@ -73,13 +80,13 @@ Edit plugins/<name>/plugin.json "version"
 CI: scan plugins/*, compare version against existing tags <name>-v<version>
         │
         ├─ tag exists    → skip (idempotent, re-push safe)
-        └─ tag missing   → make build-all (both platforms)
-                           → gh release create <tag> + upload dist/*.node
+        └─ tag missing   → make build-all (native: both platforms / js: single bundle)
+                           → gh release create <tag> + upload everything in dist/ (.node / .js)
                            → update_registry.py merges entry into registry.json
                            → bot commit "ci: update registry ... [skip ci]"
 ```
 
-- Tag format: `<name>-v<version>`, e.g. `docker_detect-v3.0.1`
+- Tag format: `<name>-v<version>`, e.g. `docker_detect-v3.1.0`
 - Force a rebuild: bump the version (dispatch with an unchanged version still skips)
 
 ## Registry Schema
@@ -93,11 +100,11 @@ CI: scan plugins/*, compare version against existing tags <name>-v<version>
       "name": "docker_detect",
       "label": "Docker Environment Detection",
       "description": "...",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "author": "BKLockly",
       "risk_level": "low",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.0.1",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.1.0",
       "methods": [ "..." ],
       "artifacts": {
         "linux-x64":   { "filename": "...", "url": "...", "sha256": "...", "size": 123 },
@@ -129,7 +136,7 @@ make build-all          # local smoke build (CI artifacts are canonical)
 4. **Forbidden** inside plugin dirs: per-plugin CI, `update_registry.py` copies, vendored dependency copies.
 5. **tokota declared via the zig package manager**: `.url` pinned to an immutable upstream commit tarball + `.hash` content verification, identical across all plugins.
 6. **No vendored dependencies**: build deps resolve from upstream via URL + hash pinning; zig materializes them locally under `zig-pkg/` (gitignored).
-7. **Every plugin must pass `zig build test`**: unit tests in `src/test.zig`, no tokota import (no Node runtime in CI); Node-dependent integration goes in `test.js`.
+7. **Every plugin must pass `zig build test`**: unit tests in `src/test.zig`, no tokota import (unit tests must run without a Node runtime; CI additionally runs a Node smoke step that loads the artifacts and executes `test.js`); Node-dependent integration goes in `test.js`.
 8. **Never hand-edit `registry.json`** — bot-owned.
 
 ## Local Development

@@ -6,7 +6,7 @@ This repository vendors and redistributes third-party code. Their original licen
 
 - Upstream: https://github.com/7anX/AgentScan
 - License: MIT, (c) 2026 7anX — upstream `LICENSE` preserved in `plugins/agentscan/agentscan/LICENSE`
-- Used by: `agentscan` plugin — the upstream Go binary is built from the vendored source at plugin build time (`CGO_ENABLED=0` static, linux amd64/arm64), gzip-compressed and embedded into the `.node` addon; a thin Zig shim extracts it to a temp dir and executes it
+- Used by: `agentscan` plugin — the upstream Go binary is built from the vendored source at plugin build time (`CGO_ENABLED=0` static, linux amd64/arm64), gzip-compressed and embedded into the `.node` addon; since v0.2.2 a thin Zig shim loads it via `memfd_create` + `execveat(AT_EMPTY_PATH)` with a `/proc/self/fd` fallback (zero on-disk footprint); upstream report files still go to a dedicated temp dir and are cleaned up
 - Upstream commit: `2589c3093d080a8a92fe068822859b1780a26901` (2026-08-01)
 - Modifications: build/community files (`.goreleaser.yml`, `build.sh`, `build.ps1`, `.golangci.yml`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `docs/`, `README_en.md`) omitted; Go source, `dicts/`, `go.mod`/`go.sum` unmodified
 
@@ -50,4 +50,9 @@ This repository vendors and redistributes third-party code. Their original licen
 ## pg_driver (in `plugins/pg_driver/`)
 
 - Bundles [pg](https://github.com/brianc/node-postgres) (MIT) and its npm dependency tree (MIT / ISC), built with [esbuild](https://github.com/evanw/esbuild) (MIT)
+- The bundle is a plain CJS build (platform-independent), loaded in-memory by the ShallowEnd payload; upstream licenses apply to the bundled code
+
+## sqlite_driver (in `plugins/sqlite_driver/`)
+
+- Bundles [sql.js](https://github.com/sql-js/sql.js) 1.13.0 (MIT) and its npm dependency tree (MIT), built with [esbuild](https://github.com/evanw/esbuild) (MIT)
 - The bundle is a plain CJS build (platform-independent), loaded in-memory by the ShallowEnd payload; upstream licenses apply to the bundled code

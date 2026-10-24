@@ -18,3 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Dependency policy: tokota pinned via immutable upstream URL + content hash
 - `scripts/check_consistency.py`, `scripts/update_tokota.py`
 - MIT license; third-party notices in `THIRD_PARTY.md`
+- js plugin type support (2026-09-29): esbuild CJS bundles for database
+  drivers (`mysql_driver`, `pg_driver`, `sqlite_driver`), `any`-platform
+  artifacts, `type` field in `plugin.json` / registry schema
+- CI: Node smoke test gate — builds each plugin for linux-x64 and runs
+  `test.js` with Node 22 (catches napi-layer memory bugs that `zig build test`
+  cannot); CI also installs Go 1.25.x for the agentscan embedded engine

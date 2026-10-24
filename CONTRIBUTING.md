@@ -38,7 +38,7 @@ just pre-push   # fmt-check + consistency check + full test run
 ```
 
 CI runs the same gates (`zig fmt --check` → `check_consistency.py` →
-`zig build test`) and blocks the release on failure.
+`zig build test` → Node smoke tests) and blocks the release on failure.
 
 ## Releases
 

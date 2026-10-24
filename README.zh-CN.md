@@ -3,7 +3,7 @@
 [![Build and Release](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml/badge.svg)](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[ShallowEnd](https://github.com/BKLockly/ShallowEnd) 市场官方插件 monorepo。插件使用 Zig + [Tokota](https://github.com/kofi-q/tokota) 编写，编译为 Node.js 原生 addon（`.node`，N-API），跨 Node 版本兼容。市场索引 `registry.json` 位于仓库根目录，由 CI 机器人维护。
+[ShallowEnd](https://github.com/BKLockly/ShallowEnd) 市场官方插件 monorepo。插件使用 Zig + [Tokota](https://github.com/kofi-q/tokota) 编写，编译为 Node.js 原生 addon（`.node`，N-API），跨 Node 版本兼容；另有一类 **js 类型插件**（esbuild CJS bundle，数据库驱动）。市场索引 `registry.json` 位于仓库根目录，由 CI 机器人维护。
 
 本仓与 ShallowEnd 主程序完全解耦：主程序仅通过 `plugin_marketplace_url` 配置指向本仓的 `registry.json`。
 
@@ -20,22 +20,28 @@ ShallowEnd-Plugins/
 │   ├── check_consistency.py  ← 一致性检查（CI 门禁 + 本地 just check）
 │   ├── update_registry.py    ← registry.json 更新脚本（CI 调用）
 │   └── update_tokota.py      ← tokota 钉版升级
-├── plugins/                  ← 每个插件一个目录（依赖由 zig 包管理器解析）
-└── plugins/                  ← 每个插件一个目录，目录名 = 插件名
+├── plugins/                  ← 每个插件一个目录，目录名 = 插件名
 ```
 
 ## 插件列表
 
+> 权威版本以 `registry.json` 为准，下表随发布更新。
+
 | 插件 | 版本 | 说明 | 风险 |
 |------|------|------|------|
-| bof | 0.2.0 | 加载并执行 Beacon Object Files（BOF），musl 静态链接 | high |
-| docker_detect | 3.0.1 | Docker 容器环境检测 | low |
-| file_compress | 0.2.0 | 纯 Zig Gzip 文件压缩 | low |
-| file_decompress | 0.2.1 | 纯 Zig .gz 解压 | low |
+| agentscan | 0.2.2 | 内网 MCP / A2A / LLM 暴露面扫描（内嵌 AgentScan 引擎，payload memfd 零落地） | medium |
+| bof | 0.3.1 | 加载并执行 Beacon Object Files（BOF） | high |
+| docker_detect | 3.1.0 | Docker 容器环境检测 | low |
+| file_compress | 0.3.1 | 文件/目录压缩（tar.gz） | low |
+| file_decompress | 0.3.0 | 压缩包解压 | low |
 | hello | 0.4.1 | 脚手架示例插件 | low |
-| linux_exploit_suggester | 1.3 | 匹配目标内核的本地提权漏洞建议 | low |
-| sensitive_search | 0.14.2 | 敏感文件/凭据搜索 | medium |
-| agentscan | 0.1.0 | 内网 MCP / A2A / LLM 暴露面扫描（内嵌 AgentScan 引擎） | medium |
+| linux_exploit_suggester | 1.3.1 | 匹配目标内核的本地提权漏洞建议 | low |
+| load_elf | 0.1.3 | 内存 ELF 加载执行（memfd 零落地） | high |
+| mysql_driver | 1.0.0 | MySQL 数据库驱动（js bundle，内存加载） | low |
+| pg_driver | 1.0.0 | PostgreSQL 数据库驱动（js bundle，内存加载） | low |
+| reverse_shell | 0.1.0 | 反弹 Shell（native 零依赖 + 解释器变体） | high |
+| sensitive_search | 0.14.3 | 敏感文件/凭据搜索 | medium |
+| sqlite_driver | 1.0.1 | SQLite 数据库驱动（sql.js js bundle，内存加载） | low |
 
 ## 致谢
 
@@ -51,6 +57,7 @@ ShallowEnd-Plugins/
 | [linux-exploit-suggester](https://github.com/mzet-/linux-exploit-suggester) | GPL-3.0 | `linux_exploit_suggester` 的 CVE 知识库 |
 | [mysql2](https://github.com/sidorares/node-mysql2) | MIT | `mysql_driver` 插件 bundle（esbuild 打包，目标机内存加载） |
 | [pg](https://github.com/brianc/node-postgres) | MIT | `pg_driver` 插件 bundle（esbuild 打包，目标机内存加载） |
+| [sql.js](https://github.com/sql-js/sql.js) | MIT | `sqlite_driver` 插件 bundle（esbuild 打包，目标机内存加载） |
 | [esbuild](https://github.com/evanw/esbuild) | MIT | js 类型驱动插件的打包器 |
 
 ## 平台矩阵
@@ -62,7 +69,7 @@ ShallowEnd-Plugins/
 | Windows x64 | `win32-x64` | `x86_64-windows-gnu` | ❌ |
 | macOS | `darwin-*` | — | ❌ |
 
-决策理由：主攻 Linux 目标，ARM Linux（云主机/容器）零成本保留；Windows 无测试能力且 Node.js 靶面极窄；macOS 需要时本地 `zig build -Dtarget=...` 冒烟即可。**bof 例外**：musl libc 静态链接 bof-launcher。
+决策理由：主攻 Linux 目标，ARM Linux（云主机/容器）零成本保留；Windows 无测试能力且 Node.js 靶面极窄；macOS 需要时本地 `zig build -Dtarget=...` 冒烟即可。bof 曾用 musl libc 静态链接 bof-launcher，v0.3.0 起统一 gnu（musl 产物无法在 glibc 靶机 dlopen）。
 
 ## 发布流程（全自动）
 
@@ -73,13 +80,13 @@ ShallowEnd-Plugins/
 CI: 遍历 plugins/*，比对已有 tag <name>-v<version>
         │
         ├─ tag 已存在 → 跳过（幂等，重复 push 安全）
-        └─ tag 不存在 → make build-all（双平台）
-                        → gh release create <tag> + 上传 dist/*.node
+        └─ tag 不存在 → make build-all（native 双平台 / js 单 bundle）
+                        → gh release create <tag> + 上传 dist/ 全部产物（.node / .js）
                         → update_registry.py 合并条目进 registry.json
                         → 机器人提交 "ci: update registry ... [skip ci]"
 ```
 
-- tag 格式：`<name>-v<version>`，如 `docker_detect-v3.0.1`
+- tag 格式：`<name>-v<version>`，如 `docker_detect-v3.1.0`
 - 强制重编：bump version（version 未变的 dispatch 依然幂等跳过）
 
 ## Registry Schema
@@ -93,11 +100,11 @@ CI: 遍历 plugins/*，比对已有 tag <name>-v<version>
       "name": "docker_detect",
       "label": "Docker 环境检测",
       "description": "...",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "author": "BKLockly",
       "risk_level": "low",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.0.1",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.1.0",
       "methods": [ "..." ],
       "artifacts": {
         "linux-x64":   { "filename": "...", "url": "...", "sha256": "...", "size": 123 },
@@ -129,7 +136,7 @@ make build-all          # 本地冒烟构建（正式产物以 CI 为准）
 4. **禁止**在插件目录内放：per-plugin CI、`update_registry.py` 副本、vendored 依赖拷贝。
 5. **tokota 通过 zig 包管理器声明**：`.url` 钉上游 commit 不可变 tarball + `.hash` 内容校验，全插件一致。
 6. **禁止 vendored 依赖**：构建依赖走上游 URL + hash 锁定；zig 自动物化到本地 `zig-pkg/`（已 gitignore）。
-7. **每个插件必须能 `zig build test`**：单元测试写 `src/test.zig`，不得 import tokota（CI 无 Node 运行时）；需要 Node 的集成验证放 `test.js`。
+7. **每个插件必须能 `zig build test`**：单元测试写 `src/test.zig`，不得 import tokota（单元测试不依赖 Node 运行时即可跑；CI 另有 Node 冒烟步真加载产物跑 `test.js`）；需要 Node 的集成验证放 `test.js`。
 8. **`registry.json` 勿手改** —— 机器人所有。
 
 ## 本地开发

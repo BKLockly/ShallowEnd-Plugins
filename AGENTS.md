@@ -1,6 +1,6 @@
 # ShallowEnd-Plugins — 插件 Monorepo（开发规范）
 
-市场所有插件的唯一仓库。插件用 Zig + Tokota 编译为 Node.js 原生 addon（`.node`），通过 N-API 加载，跨 Node 版本兼容。市场索引 `registry.json` 在本仓根目录，由 CI 机器人维护。
+市场所有插件的唯一仓库。插件用 Zig + Tokota 编译为 Node.js 原生 addon（`.node`），通过 N-API 加载，跨 Node 版本兼容；另有一类 **js 类型插件**（esbuild CJS bundle，数据库驱动等，见下文专节）。市场索引 `registry.json` 在本仓根目录，由 CI 机器人维护。
 
 本仓**完全独立于** ShallowEnd 主仓。主仓只通过 `plugin_marketplace_url` 配置指向本仓的 `registry.json`，其余零耦合。
 
@@ -32,9 +32,12 @@ ShallowEnd-Plugins/
     ├── file_compress/
     ├── file_decompress/
     ├── sensitive_search/
-    ├── agentscan/             ← Zig 薄壳 + 内嵌 Go 静态二进制（上游 AgentScan，MIT）
-    ├── mysql_driver/          ← js 类型：mysql2 esbuild CJS bundle（数据库驱动，dbDriverLoad 推送）
-    └── pg_driver/             ← js 类型：pg esbuild CJS bundle（数据库驱动，dbDriverLoad 推送）
+    ├── load_elf/             ← 内存 ELF 加载执行（memfd 零落地）
+    ├── reverse_shell/        ← 反弹 Shell（native 零依赖 + 解释器变体）
+    ├── agentscan/            ← Zig 薄壳 + 内嵌 Go 静态二进制（上游 AgentScan，MIT）
+    ├── mysql_driver/         ← js 类型：mysql2 esbuild CJS bundle（数据库驱动，dbDriverLoad 推送）
+    ├── pg_driver/            ← js 类型：pg esbuild CJS bundle（数据库驱动，dbDriverLoad 推送）
+    └── sqlite_driver/        ← js 类型：sql.js asm.js esbuild CJS bundle（数据库驱动，dbDriverLoad 推送）
 ```
 
 ## 平台矩阵（已拍板，2026-09-08）
@@ -53,11 +56,11 @@ ShallowEnd-Plugins/
 - Darwin 目标等价于自己的 Mac，需要时本地 `zig build -Dtarget=<...>` 冒烟即可
 - 客户端 `parsePlatform()` 对全平台已兼容；恢复某平台 = Makefile 加一行 + `parse_platform()` 正则已预留
 
-**bof 例外**：使用 musl libc（`x86_64-linux-musl` / `aarch64-linux-musl`），因其静态链接 bof-launcher。
+**bof 说明**：曾用 musl libc 静态链接 bof-launcher，v0.3.0 起统一回 **gnu 目标**（musl 产物的 `DT_NEEDED "libc.so"` 无法在 glibc 靶机 dlopen，见坑点 5）；bof-launcher 纯静态 `.a` 与 libc 目标无关，gnu 链接无碍。
 
 ## js 类型插件（2026-09-29 新增）
 
-数据库驱动类插件（`mysql_driver` / `pg_driver`）是 **js 类型**：esbuild 把 npm 包打成平台无关的 CJS bundle（`type: "js"`，artifact 平台标识 `any`），由 ShallowEnd payload 的 `dbDriverLoad` 在目标机 Node 内存中加载（`new Function('module','exports','require')` 语义）。与 native 插件的差异：
+数据库驱动类插件（`mysql_driver` / `pg_driver` / `sqlite_driver`）是 **js 类型**：esbuild 把 npm 包打成平台无关的 CJS bundle（`type: "js"`，artifact 平台标识 `any`），由 ShallowEnd payload 的 `dbDriverLoad` 在目标机 Node 内存中加载（`new Function('module','exports','require')` 语义）。与 native 插件的差异：
 
 - 无 Zig 工程（不建 `build.zig.zon`，tokota 钉版检查不适用）；依赖走 `package.json`（esbuild devDependency + 上游 npm 包 dependency，版本范围钉 minor）
 - `Makefile build-all` = `npm install` + esbuild bundle 到 `dist/<name>.js`；`make test` 用 node 校验导出形状（mysql → `createConnection`，pg → `Client`）
@@ -68,11 +71,11 @@ ShallowEnd-Plugins/
 
 1. **目录名 = `plugin.json` 的 `name`**，snake_case。禁止 kebab-case 目录、禁止目录名与插件名不一致。
 2. **`plugin.json` 的 `version` 是版本唯一事实源**。发布 = 改 version + push main，CI 自动打 tag / 建 release / 更新 registry。
-3. **artifact 命名**：`<name>-linux-x64.node` / `<name>-linux-arm64.node`，`<name>` 即 plugin.json 的 name（snake_case）。
+3. **artifact 命名**：`<name>-linux-x64.node` / `<name>-linux-arm64.node`，`<name>` 即 plugin.json 的 name（snake_case）；js 类型为 `<name>.js`（无平台后缀）。
 4. **禁止**在插件目录内放：per-plugin CI、`update_registry.py` 副本、vendored 依赖拷贝。全仓只允许一份上游钉版声明（各 zon 的 url+hash）。
 5. **tokota 通过 zig 包管理器声明**：每个 `build.zig.zon` 以 `.url`（上游 commit SHA 的不可变 tarball）+ `.hash`（内容校验）钉死版本，全插件必须钉同一 commit。升级流程：`zig fetch <tarball-or-url>` 取得新 hash → 脚本化 bump 全部 zon → 全量 `zig build test` 通过后才合入。
 6. **禁止 vendored 依赖**：构建依赖一律走上游 URL + hash 锁定，不进仓库（单一事实源，杜绝快照漂移）；首次构建由 zig 自动拉取并物化到本地 `zig-pkg/`（已 gitignore）。
-7. **每个插件必须能 `zig build test`**：单元测试写在 `src/test.zig`，不得 import tokota（CI 无 Node 运行时）；需要 Node 的集成验证放 `test.js`（本地手动 `node test.js`）。
+7. **每个插件必须能 `zig build test`**：单元测试写在 `src/test.zig`，不得 import tokota（单元测试不依赖 Node 运行时即可跑；CI 另有 Node 冒烟步真加载产物跑 `test.js`，见 CI 说明）。需要 Node 的集成验证放 `test.js`（本地手动 `node test.js`）。
 8. **`registry.json` 勿手改**，它由 CI 机器人提交；手工改动会在下次发布时被覆盖或造成漂移。
 9. **禁止提交构建产物**：`dist/`、`*.node`、`.zig-cache/`、`zig-out/`、`__pycache__/` 一律不入库（.gitignore 已覆盖）。
 10. **禁止硬编码任何凭据/内网地址**：CI 认证只允许 `${{ github.token }}` 或官方 actions；文档中的示例 host 一律用 `example.com` 或 GitHub URL。
@@ -87,13 +90,13 @@ ShallowEnd-Plugins/
 CI: 遍历 plugins/*，比对 version 与已有 tag <name>-v<version>
         │
         ├─ tag 已存在 → 跳过（幂等，重复 push 安全）
-        └─ tag 不存在 → make build-all（2 平台）
-                         → gh release create 建 tag + release + 上传 dist/*.node
+        └─ tag 不存在 → make build-all（native 2 平台 / js 单 bundle）
+                         → gh release create 建 tag + release + 上传 dist/ 全部产物（.node / .js）
                          → update_registry.py 合并条目进 registry.json
                          → git commit "ci: update registry ... [skip ci]" + push
 ```
 
-- tag 格式：`<name>-v<version>`，如 `docker_detect-v3.0.1`
+- tag 格式：`<name>-v<version>`，如 `docker_detect-v3.1.0`
 - 手动强制重编：GitHub Actions 界面 workflow_dispatch（但 version 没变则依然幂等跳过；要强制重发请改 version）
 - `[skip ci]` 防止机器人提交再次触发 workflow
 
@@ -108,11 +111,11 @@ CI: 遍历 plugins/*，比对 version 与已有 tag <name>-v<version>
       "name": "docker_detect",
       "label": "Docker 环境检测",
       "description": "...",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "author": "BKLockly",
       "risk_level": "low",
       "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.0.1",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.1.0",
       "methods": [ ... 来自 plugin.json ... ],
       "artifacts": {
         "linux-x64":   { "filename": "...", "url": "...", "sha256": "...", "size": 123 },
@@ -128,9 +131,9 @@ CI: 遍历 plugins/*，比对 version 与已有 tag <name>-v<version>
 
 ## CI 说明
 
-- Runner：GitHub hosted `ubuntu-latest`，Zig 0.16.0 经 `mlugg/setup-zig@v2` 安装
-- 触发：push main（paths 限定 plugins/scripts/registry/workflow）或手动 dispatch
-- 质量门禁（任一失败即中止发布）：`zig fmt --check`（排除 bof-launcher 第三方源码）→ `scripts/check_consistency.py` → 全插件 `zig build test`
+- Runner：GitHub hosted `ubuntu-latest`；Zig 0.16.0（`mlugg/setup-zig@v2`）、Go 1.25.x（`actions/setup-go@v5`，agentscan 内嵌引擎编译用）、Node.js 22（`actions/setup-node@v4`，冒烟用）
+- 触发：push main（paths 限定 `plugins/**` / `shared/**` / `scripts/**` / `registry.json` / workflow）或手动 dispatch
+- 质量门禁（任一失败即中止发布）：`zig fmt --check`（排除 bof-launcher 第三方源码）→ `scripts/check_consistency.py` → 全插件 `zig build test` → **Node 冒烟测试**（逐插件构建 linux-x64 产物并 `node test.js`，专防 napi 层内存 bug——见坑点 1）
 - 认证：全部使用 `${{ github.token }}`（`permissions: contents: write`），无任何硬编码凭据
 - 幂等性：以 tag 存在性为判据，任何原因的重复运行都安全
 
@@ -182,6 +185,7 @@ make clean
   "version": "0.1.0",             // 版本唯一事实源，semver
   "author": "BKLockly",
   "risk_level": "low",            // low | medium | high
+  "type": "native",               // 可选，native（默认）| js；js 类型见专节
   "methods": [
     {
       "name": "method_name",      // 对应 src/root.zig 导出的 pub fn
@@ -269,15 +273,20 @@ pub fn myMethod(call: tokota.Call) ![]const u8 {
 
 ## 已迁移插件版本基线
 
-> 权威版本以 registry.json 为准（CI 发布后自动回写）；下表仅为迁移期快照的延续。
+> 权威版本以 registry.json 为准（CI 发布后自动回写）；下表为快照。
 
 | 插件 | version | 备注 |
 |------|---------|------|
-| bof | 0.3.0 | 静态链接 lib/ 下 bof-launcher（gnu 目标，v0.3.0 起） |
+| bof | 0.3.1 | 静态链接 lib/ 下 bof-launcher（gnu 目标，v0.3.0 起弃 musl） |
 | docker_detect | 3.1.0 | 原 plugin-docker-detect |
 | file_compress | 0.3.1 | |
 | file_decompress | 0.3.0 | 原 plugin-file-decompress |
 | hello | 0.4.1 | scaffold 示例插件 |
 | linux_exploit_suggester | 1.3.1 | CVE 知识库参考 The-Z-Labs 上游（GPL-3.0），Zig 匹配逻辑为原创，LICENSE/CHANGELOG 保留 |
+| load_elf | 0.1.3 | memfd 零落地 + O_TMPFILE 降级层，超时按进程组收割 |
+| reverse_shell | 0.1.0 | native socket 直连 + bash/python/nc 解释器变体，setsid 会话驻留 |
 | sensitive_search | 0.14.3 | |
-| agentscan | 0.2.1 | Zig 薄壳 + 内嵌 Go 静态二进制（上游 7anX/AgentScan，MIT，commit 2589c30），CI 需要 Go 工具链 |
+| agentscan | 0.2.2 | Zig 薄壳 + 内嵌 Go 静态二进制（上游 7anX/AgentScan，MIT，commit 2589c30），CI 需要 Go 工具链；v0.2.2 起 payload memfd 内存加载零落地 |
+| mysql_driver | 1.0.0 | js 类型 |
+| pg_driver | 1.0.0 | js 类型 |
+| sqlite_driver | 1.0.1 | js 类型，sql.js asm.js bundle |
