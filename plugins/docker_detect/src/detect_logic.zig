@@ -1,7 +1,7 @@
 // 纯逻辑层：不 import tokota，信号判定可在任意平台单测（LES matcher.zig 同款分层）。
 const std = @import("std");
 
-const CgroupResult = struct {
+pub const CgroupResult = struct {
     found: bool,
     pattern: []const u8,
     confidence: u8,
@@ -33,7 +33,7 @@ pub fn analyzeCgroup(data: []const u8) CgroupResult {
     return .{ .found = false, .pattern = "", .confidence = 0, .hint = "" };
 }
 
-const MountResult = struct {
+pub const MountResult = struct {
     docker_found: bool,
     root_overlay: bool,
     overlay_generic: bool,
