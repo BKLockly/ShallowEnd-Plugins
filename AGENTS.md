@@ -271,6 +271,9 @@ pub fn myMethod(call: tokota.Call) ![]const u8 {
 7. **test.js 必须对齐真实导出**：历史上三份 test.js 陈旧到调不存在的导出（`isDocker()`/`mod.hello`/bof 里整份是 hello 的复制品），全靠 node 冒烟才暴露。新插件交付时 `node test.js` 必须真跑过。
 8. **C 字符串 const 限定**：bof_launcher 的 `bofArgsAdd` 收 `[*c]u8`（可变指针）——经手 C API 的字符串一律持 `[]u8`，别用 `[]const u8` 再 `@constCast`。
 9. **`std.Io.Writer/Reader` 别名类**：写测试时给 `f.writer(io_, &wbuf)` 喂 `wbuf` 自身当数据源同样触发 `@memcpy arguments alias` panic——数据缓冲与流内部缓冲永远分开声明。
+10. **macOS 本地门禁对 Linux-only 分支是盲的**：源码里 `if (builtin.os.tag != .linux)` 这类 comptime 条件在 macOS 编译时整个跳过另一分支的语义分析——本地 `zig build test` 全绿 ≠ Linux 目标能编过（docker_detect v3.2.0 的非 pub 跨文件引用只在 CI 的 Linux runner 才炸，烧掉一个 CI run）。**native 插件改动推送前跑 `just verify-linux`**（Docker 内 Linux 原生 `zig build test`）；跨文件引用的类型/函数一律 `pub`。
+11. **GH runner 镜像的加固包装器**：runner 把 /bin/sleep、/bin/echo 等换成 ~11.8MB 的加固二进制——校验「请求的 utility vs 实际执行名」，对 `/memfd:` 伪装执行直接拒绝（`Security violation ... does not match executable name` 秒退 95，专防 memfd 伪装这类技术）。**memfd/伪装执行类测试载荷用 /bin/sh**（实测未加固）；对系统二进制 `readFileAlloc` 别挂紧 limit（包装器体积远超常规 coreutils，曾致 StreamTooLong 假阴）。
+12. **CI 失败止损纪律**：build.yml 一次 push 触发一次全插件串行 run——连续小步 push 修复 = 连环烧 CI（2026-11-15 一天烧了 5 个失败 run）。第一次失败后：先在本机/Docker 复现根因修净，同根问题合并一个提交再推；纯测试/文档改动不 bump version（不触发发版，但 paths 命中仍跑全量 run）；AGENTS.md/CHANGELOG/Justfile 不在 paths 内，改这些可安全推送零消耗。
 
 ## 已迁移插件版本基线
 
