@@ -145,12 +145,15 @@ test "execFd reports timeout and kills the process" {
     const allocator = std.testing.allocator;
     const linux = std.os.linux;
 
-    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sleep", allocator, .unlimited);
+    // GH runner 镜像的 /bin/sleep 异常（实测 ≥8MB 且 `sleep 30` 秒退——曾连累
+    // readFileAlloc 报 StreamTooLong）。改用同一 runner 上实测可用的 /bin/sh
+    // 空转循环：无输出、存活超过 timeout 的子进程即满足本测试语义。
+    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .unlimited);
     defer allocator.free(bin);
 
     const fd = try runner.createMemfd(bin);
     defer _ = linux.close(fd);
-    const argv = try LinuxCtx.buildArgv(allocator, "sleep", &.{"30"});
+    const argv = try LinuxCtx.buildArgv(allocator, "sh", &.{ "-c", "while :; do :; done" });
     defer LinuxCtx.freeArgv(allocator, argv);
     const envp = try runner.buildEnvp(allocator);
     defer allocator.free(envp);
