@@ -18,32 +18,33 @@ const (
 // DefaultPorts MCP 默认扫描端口列表（按命中率降序排列）。
 //
 // 数据来源（2025-06 实测）：
-//   Quake  app:"Model Context Protocol"（全球）: 8000, 8001, 443, 3000, 80
-//   Quake  app:"Model Context Protocol" 中国:    8001, 8000, 3000, 11003, 8080
-//   FOFA   header="MCP-Protocol-Version||MCP-Session-Id": 443, 80, 3000, 3001, 8080
 //
-//   - 8000:  全球 #1；Python SDK / FastMCP 默认
-//   - 8001:  中国 #1 / 全球 #2；大量国内部署用此端口（之前误删，现加回）
-//   - 443:   全球 #3 / FOFA #1；生产反向代理
-//   - 3000:  全球 #4 / 中国 #3；MCPHub / Firebase / MCP-Nest
-//   - 80:    全球 #5 / FOFA #2；生产反向代理
-//   - 8080:  中国 #5 / FOFA #5；FastMCP dev_server
-//   - 3001:  FOFA #4；Node.js 次级端口
-//   - 11003: 中国 #4；国内实测发现，来源待定
-//   - 7860:  Gradio MCP / Langflow（HuggingFace 生态）
-//   - 3030:  MCP-Nest（NestJS 框架）默认
-//   - 8443:  HTTPS 非标准端口
-//   - 5000:  Python web 常用端口
-//   - 4000/9000: 无 MCP 特定证据，保留但优先级最低
+//	Quake  app:"Model Context Protocol"（全球）: 8000, 8001, 443, 3000, 80
+//	Quake  app:"Model Context Protocol" 中国:    8001, 8000, 3000, 11003, 8080
+//	FOFA   header="MCP-Protocol-Version||MCP-Session-Id": 443, 80, 3000, 3001, 8080
+//
+//	- 8000:  全球 #1；Python SDK / FastMCP 默认
+//	- 8001:  中国 #1 / 全球 #2；大量国内部署用此端口（之前误删，现加回）
+//	- 443:   全球 #3 / FOFA #1；生产反向代理
+//	- 3000:  全球 #4 / 中国 #3；MCPHub / Firebase / MCP-Nest
+//	- 80:    全球 #5 / FOFA #2；生产反向代理
+//	- 8080:  中国 #5 / FOFA #5；FastMCP dev_server
+//	- 3001:  FOFA #4；Node.js 次级端口
+//	- 11003: 中国 #4；国内实测发现，来源待定
+//	- 7860:  Gradio MCP / Langflow（HuggingFace 生态）
+//	- 3030:  MCP-Nest（NestJS 框架）默认
+//	- 8443:  HTTPS 非标准端口
+//	- 5000:  Python web 常用端口
+//	- 4000/9000: 无 MCP 特定证据，保留但优先级最低
 var DefaultPorts = []int{
 	// Tier 1 — 实测高频（Quake / FOFA 榜单前列）
 	8000, 8001, 443, 3000, 80, 8080, 3001,
 	// Tier 2 — 实测发现 + 框架默认
 	11003, 7860, 3030, 8443, 5000,
 	// Tier 3 — AI/云原生生态补充
-	8888,  // Jupyter Notebook / Gradio 备用（AI 工具链高频）
-	8787,  // Cloudflare Workers wrangler dev 本地默认
-	5001,  // Flask macOS 替代（AirPlay 占用 5000）
+	8888, // Jupyter Notebook / Gradio 备用（AI 工具链高频）
+	8787, // Cloudflare Workers wrangler dev 本地默认
+	5001, // Flask macOS 替代（AirPlay 占用 5000）
 	4000, 9000,
 	// Tier 4 — AI Gateway 专用端口（实测：OmniRoute/Routiform 中国部署）
 	20128, // OmniRoute AI Gateway 默认端口（Quake/实测大量命中）
@@ -72,10 +73,10 @@ var A2ADefaultPorts = []int{
 	// Tier 2 — 框架默认开发端口
 	3000, 8000, 8001, 3001, 5000,
 	// Tier 3 — AI 生态特定端口
-	7860,  // Gradio（HuggingFace 生态，A2A agent 常见宿主）
-	8501,  // Streamlit 默认端口
-	8888,  // Jupyter Notebook / Gradio 备用
-	4010,  // EasyClaw A2A marketplace
+	7860, // Gradio（HuggingFace 生态，A2A agent 常见宿主）
+	8501, // Streamlit 默认端口
+	8888, // Jupyter Notebook / Gradio 备用
+	4010, // EasyClaw A2A marketplace
 	// Tier 4 — 通用补充
 	8081, 9000, 9001, 10000,
 	// Tier 5 — AI Gateway（OmniRoute 等中国部署，A2A 可能共用）
@@ -141,13 +142,13 @@ var MCPEndpoints = []string{
 // SSELegacyPaths 这些路径需要用 HTTP+SSE legacy 协议探测（GET + 保持长连接）。
 // 当 streamable HTTP probe 在这些路径失败时，应额外尝试 legacy SSE 握手。
 var SSELegacyPaths = map[string]bool{
-	"/sse":              true,
-	"/mcp/sse":          true,
-	"/mcp-server/sse":   true,
-	"/sse/":             true,
-	"/api/mcp/sse":      true, // /api/mcp 下的 SSE 子路由
-	"/api/v1/mcp/sse":   true, // Langflow SSE 端点
-	"/gradio_api/mcp/":  true, // Gradio 同时支持 SSE legacy 和 Streamable HTTP
+	"/sse":             true,
+	"/mcp/sse":         true,
+	"/mcp-server/sse":  true,
+	"/sse/":            true,
+	"/api/mcp/sse":     true, // /api/mcp 下的 SSE 子路由
+	"/api/v1/mcp/sse":  true, // Langflow SSE 端点
+	"/gradio_api/mcp/": true, // Gradio 同时支持 SSE legacy 和 Streamable HTTP
 }
 
 // MCPAuthPaths 已知 MCP 特征路径集合，用于 auth-required 打分。
@@ -159,10 +160,10 @@ var MCPAuthPaths = map[string]bool{
 	"/api/mcp": true, "/api/mcp/sse": true,
 	"/v1/mcp": true, "/mcp/v1": true, "/api/v1/mcp": true,
 	"/api/v1/mcp/sse": true,
-	"/mcp-server": true, "/mcp-server/sse": true,
+	"/mcp-server":     true, "/mcp-server/sse": true,
 	"/gradio_api/mcp": true, "/gradio_api/mcp/": true,
 	"/mcp/messages/": true,
-	"/agent/mcp": true,
+	"/agent/mcp":     true,
 }
 
 // ── HTTP 请求头 ───────────────────────────────────────────────────────────────
@@ -176,27 +177,27 @@ const UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 // MCPServerHints Server 响应头中出现这些字符串时，视为高优先级 MCP 候选。
 var MCPServerHints = []string{
 	// Python 生态
-	"uvicorn",    // FastAPI / Python ASGI 默认服务器
+	"uvicorn", // FastAPI / Python ASGI 默认服务器
 	"fastapi",
 	"fastmcp",
-	"gunicorn",   // Python WSGI 生产服务器
-	"starlette",  // FastAPI 底层框架（少数场景暴露）
-	"hypercorn",  // Python ASGI 替代服务器（Quart 默认）
-	"werkzeug",   // Flask 开发服务器
+	"gunicorn",  // Python WSGI 生产服务器
+	"starlette", // FastAPI 底层框架（少数场景暴露）
+	"hypercorn", // Python ASGI 替代服务器（Quart 默认）
+	"werkzeug",  // Flask 开发服务器
 	"python",
 	// Node.js / JS Runtime 生态
-	"express",    // Node.js 最常见框架
+	"express", // Node.js 最常见框架
 	"fastify",
 	"node",
-	"hono",       // Cloudflare Workers / Deno 生态流行框架
-	"deno",       // Deno runtime
-	"bun",        // Bun runtime
-	"nestjs",     // MCP-Nest
+	"hono",   // Cloudflare Workers / Deno 生态流行框架
+	"deno",   // Deno runtime
+	"bun",    // Bun runtime
+	"nestjs", // MCP-Nest
 	// 专有 MCP 生态
-	"gradio",     // Gradio MCP（HuggingFace 生态）
-	"langflow",   // Langflow MCP
+	"gradio",   // Gradio MCP（HuggingFace 生态）
+	"langflow", // Langflow MCP
 	// 其他语言
-	"kestrel",    // ASP.NET Core 默认服务器（C# MCP SDK）
+	"kestrel", // ASP.NET Core 默认服务器（C# MCP SDK）
 }
 
 // ── HTTPS 端口推断规则 ────────────────────────────────────────────────────────

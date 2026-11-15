@@ -157,7 +157,6 @@ func writeA2ASection(w io.Writer, results []*models.A2AServer, lang reportLangua
 	return nil
 }
 
-
 func buildUnifiedA2AServersLang(results []*models.A2AServer, zh bool) []unifiedA2AServer {
 	servers := make([]unifiedA2AServer, 0, len(results))
 	for _, r := range results {

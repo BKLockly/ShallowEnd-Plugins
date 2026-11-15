@@ -110,8 +110,8 @@ func FprintLLMSummary(w io.Writer, results []*models.LLMServer, noColor bool) {
 
 // LLMJSONReport is the top-level JSON report structure.
 type LLMJSONReport struct {
-	Version string          `json:"version"`
-	Summary LLMJSONSummary  `json:"summary"`
+	Version string              `json:"version"`
+	Summary LLMJSONSummary      `json:"summary"`
 	Results []*models.LLMServer `json:"results"`
 }
 

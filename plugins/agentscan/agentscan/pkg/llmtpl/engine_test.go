@@ -152,4 +152,3 @@ func TestEngineTemplateCount(t *testing.T) {
 		t.Error("expected at least 1 template")
 	}
 }
-

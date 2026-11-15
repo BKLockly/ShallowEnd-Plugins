@@ -27,10 +27,10 @@ type TemplateInfo struct {
 // HTTPRule defines one HTTP probe with its matchers (DSL expressions).
 // Matchers within a rule have OR semantics: if any matcher matches, the rule is satisfied.
 type HTTPRule struct {
-	Method   string   `yaml:"method"`            // GET | POST
-	Path     string   `yaml:"path"`              // e.g. "/v1/models"
-	Matchers []string `yaml:"matchers"`          // DSL expression list (OR relation)
-	Data     string   `yaml:"data,omitempty"`    // POST request body
+	Method   string   `yaml:"method"`         // GET | POST
+	Path     string   `yaml:"path"`           // e.g. "/v1/models"
+	Matchers []string `yaml:"matchers"`       // DSL expression list (OR relation)
+	Data     string   `yaml:"data,omitempty"` // POST request body
 }
 
 // VersionRule defines how to extract the framework version.
@@ -61,8 +61,8 @@ type ModelExtractor struct {
 	Part     string `yaml:"part"`                // "body"
 	Type     string `yaml:"type"`                // "json_array" | "regex"
 	JSONPath string `yaml:"json_path,omitempty"` // e.g. "models[*].name" or "data[*].id"
-	Regex    string `yaml:"regex,omitempty"`      // regex alternative
-	Group    int    `yaml:"group,omitempty"`      // capture group for regex
+	Regex    string `yaml:"regex,omitempty"`     // regex alternative
+	Group    int    `yaml:"group,omitempty"`     // capture group for regex
 }
 
 // AuthRule defines how to determine authentication status.

@@ -11,12 +11,12 @@ type LLMServer struct {
 	Port             int             `json:"port"`
 	Hostname         string          `json:"hostname,omitempty"`
 	URL              string          `json:"url"`
-	ServiceType      string          `json:"service_type"`       // "llm_inference_api"
-	Framework        string          `json:"framework"`          // template info.name
+	ServiceType      string          `json:"service_type"` // "llm_inference_api"
+	Framework        string          `json:"framework"`    // template info.name
 	FrameworkVersion string          `json:"framework_version,omitempty"`
 	Models           []LLMModel      `json:"models,omitempty"`
 	ModelCount       int             `json:"model_count"`
-	AuthStatus       string          `json:"auth_status"`        // "open" | "auth_required" | "unknown"
+	AuthStatus       string          `json:"auth_status"` // "open" | "auth_required" | "unknown"
 	FingerprintScore float64         `json:"fingerprint_score"`
 	TLSEnabled       bool            `json:"tls_enabled"`
 	ResponseTimeMs   float64         `json:"response_time_ms"`

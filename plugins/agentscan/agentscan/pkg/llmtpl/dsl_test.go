@@ -50,11 +50,11 @@ func TestCompileRule(t *testing.T) {
 		{`body="a" || body="b"`, false},
 		{`(body="a" || body="b") && header="c"`, false},
 		{`body~="version.*\d+"`, false},
-		{``, true},                // empty
-		{`body`, true},            // incomplete
-		{`body=`, true},           // missing literal
-		{`body="a" &&`, true},     // trailing operator
-		{`unknown="x"`, true},     // unknown field
+		{``, true},            // empty
+		{`body`, true},        // incomplete
+		{`body=`, true},       // missing literal
+		{`body="a" &&`, true}, // trailing operator
+		{`unknown="x"`, true}, // unknown field
 	}
 
 	for _, tt := range tests {

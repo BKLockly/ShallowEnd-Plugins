@@ -79,7 +79,7 @@ func ParseJSON(data []byte) (interface{}, error) {
 type pathSegment struct {
 	key      string
 	hasIndex bool
-	index    int  // -1 means wildcard [*]
+	index    int // -1 means wildcard [*]
 }
 
 func parsePath(path string) []pathSegment {

@@ -288,7 +288,6 @@ func summarizeResults(results []*models.MCPServer) JSONSummary {
 	return summary
 }
 
-
 func buildHTMLServersLang(results []*models.MCPServer, zh bool) []htmlServer {
 	servers := make([]htmlServer, 0, len(results))
 	for _, r := range results {
@@ -644,19 +643,19 @@ func zhReportLanguage() reportLanguage {
 		A2APrivateHost:     "私有主机",
 		A2AAdvertised:      "通告地址",
 
-		LLMFramework:     "推理框架",
-		LLMAuthStatus:    "认证状态",
-		LLMModels:        "模型数",
-		LLMVersion:       "版本",
-		LLMResponseTime:  "响应时间",
-		LLMTLS:           "TLS",
-		LLMProbeEvidence: "探测证据",
-		LLMOpen:          "开放",
-		LLMYes:           "是",
-		LLMNo:            "否",
-		LLMMethod:        "方法",
-		LLMPath:          "路径",
-		LLMStatusCode:    "状态码",
+		LLMFramework:       "推理框架",
+		LLMAuthStatus:      "认证状态",
+		LLMModels:          "模型数",
+		LLMVersion:         "版本",
+		LLMResponseTime:    "响应时间",
+		LLMTLS:             "TLS",
+		LLMProbeEvidence:   "探测证据",
+		LLMOpen:            "开放",
+		LLMYes:             "是",
+		LLMNo:              "否",
+		LLMMethod:          "方法",
+		LLMPath:            "路径",
+		LLMStatusCode:      "状态码",
 		LLMMatch:           "匹配",
 		LLMTime:            "耗时",
 		LLMNegativeSignals: "排除信号",

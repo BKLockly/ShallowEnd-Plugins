@@ -1054,8 +1054,10 @@ func isModernAuthChallenge(resp *http.Response, modernCode string) bool {
 
 // modernMCPErrorCodes 是 2026-07-28 规范在 MCP 独占保留区间（-32020~-32099）
 // 分配的错误码，只有 modern MCP 服务器会返回，可作为零误报的存活指纹。
-//   -32020 HeaderMismatch / -32021 MissingRequiredClientCapability
-//   -32022 UnsupportedProtocolVersion
+//
+//	-32020 HeaderMismatch / -32021 MissingRequiredClientCapability
+//	-32022 UnsupportedProtocolVersion
+//
 // 注意：不含 -32601（Method not found）——它是 JSON-RPC 2.0 标准预定义码，
 // 任何 JSON-RPC 服务器遇到未知方法都会返回，用它做指纹会把普通 JSON-RPC 服务、
 // 以及不认 server/discover 的 legacy MCP 服务器误判为 modern。

@@ -222,8 +222,9 @@ func isIPRange(s string) bool {
 
 // parseIPRange 解析 IP range
 // 支持两种格式：
-//   1.1.1.1-2.2.2.2    完整 IP 范围
-//   192.168.1.1-255    末段范围（192.168.1.1 ~ 192.168.1.255）
+//
+//	1.1.1.1-2.2.2.2    完整 IP 范围
+//	192.168.1.1-255    末段范围（192.168.1.1 ~ 192.168.1.255）
 func parseIPRange(s string, ports []int) ([]Target, error) {
 	parts := strings.SplitN(s, "-", 2)
 	startIP := net.ParseIP(parts[0]).To4()

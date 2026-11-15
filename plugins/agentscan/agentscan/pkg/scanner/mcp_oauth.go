@@ -193,8 +193,9 @@ func oauthStringSlice(v interface{}) []string {
 
 // extractResourceMetadataURL extracts the resource_metadata URL from a WWW-Authenticate header.
 // Handles both quoted and unquoted forms:
-//   Bearer resource_metadata="https://example.com/.well-known/oauth-protected-resource/mcp"
-//   Bearer resource_metadata=https://example.com/.well-known/oauth-protected-resource/mcp
+//
+//	Bearer resource_metadata="https://example.com/.well-known/oauth-protected-resource/mcp"
+//	Bearer resource_metadata=https://example.com/.well-known/oauth-protected-resource/mcp
 func extractResourceMetadataURL(wwwAuth string) string {
 	const key = "resource_metadata="
 	idx := strings.Index(wwwAuth, key)
