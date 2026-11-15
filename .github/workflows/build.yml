@@ -71,7 +71,7 @@ jobs:
             name=$(python3 -c "import json;print(json.load(open('$dir/plugin.json'))['name'])")
             ptype=$(python3 -c "import json;print(json.load(open('$dir/plugin.json')).get('type','native'))")
             echo "== node smoke: $name ($ptype)"
-            if [ "$ptype" = "js" ]; then
+            if [ "$ptype" = "driver" ]; then
               make -C "$dir" build-all
               make -C "$dir" test
             else

@@ -3,7 +3,7 @@
 [![Build and Release](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml/badge.svg)](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Official plugin monorepo for the [ShallowEnd](https://github.com/BKLockly/ShallowEnd) marketplace. Plugins are written in Zig + [Tokota](https://github.com/kofi-q/tokota) and compiled to Node.js native addons (`.node`, N-API) — version-independent across Node runtimes. There is also a **js plugin type** (esbuild CJS bundles, used by the database drivers). The marketplace index `registry.json` lives at the repo root and is maintained by the CI bot.
+Official plugin monorepo for the [ShallowEnd](https://github.com/BKLockly/ShallowEnd) marketplace. Plugins are written in Zig + [Tokota](https://github.com/kofi-q/tokota) and compiled to Node.js native addons (`.node`, N-API) — version-independent across Node runtimes. There is also a **driver plugin type** (formerly `js`; esbuild CJS bundles, used by the database drivers). The marketplace index `registry.json` lives at the repo root and is maintained by the CI bot.
 
 This repository is fully decoupled from the ShallowEnd main app: the app only points its `plugin_marketplace_url` setting at this repo's `registry.json`.
 
@@ -37,11 +37,11 @@ ShallowEnd-Plugins/
 | hello | 0.4.1 | Scaffold example plugin | low |
 | linux_exploit_suggester | 1.3.1 | Suggest kernel LPE exploits matching the target kernel | low |
 | load_elf | 0.1.3 | Load and execute ELF binaries from memory (memfd, zero footprint) | high |
-| mysql_driver | 1.0.0 | MySQL database driver (js bundle, in-memory load) | low |
-| pg_driver | 1.0.0 | PostgreSQL database driver (js bundle, in-memory load) | low |
+| mysql_driver | 1.0.0 | MySQL database driver (driver bundle, in-memory load) | low |
+| pg_driver | 1.0.0 | PostgreSQL database driver (driver bundle, in-memory load) | low |
 | reverse_shell | 0.1.0 | Spawn a shell session connecting back to a listener (zero-dep native + interpreter variants) | high |
 | sensitive_search | 0.14.3 | Search the target filesystem for sensitive files/credentials | medium |
-| sqlite_driver | 1.0.1 | SQLite database driver (sql.js js bundle, in-memory load) | low |
+| sqlite_driver | 1.0.1 | SQLite database driver (sql.js driver bundle, in-memory load) | low |
 
 ## Acknowledgements
 
