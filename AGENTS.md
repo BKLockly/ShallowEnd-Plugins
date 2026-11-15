@@ -76,7 +76,7 @@ ShallowEnd-Plugins/
 5. **tokota 通过 zig 包管理器声明**：每个 `build.zig.zon` 以 `.url`（上游 commit SHA 的不可变 tarball）+ `.hash`（内容校验）钉死版本，全插件必须钉同一 commit。升级流程：`zig fetch <tarball-or-url>` 取得新 hash → 脚本化 bump 全部 zon → 全量 `zig build test` 通过后才合入。
 6. **禁止 vendored 依赖**：构建依赖一律走上游 URL + hash 锁定，不进仓库（单一事实源，杜绝快照漂移）；首次构建由 zig 自动拉取并物化到本地 `zig-pkg/`（已 gitignore）。
 7. **每个插件必须能 `zig build test`**：单元测试写在 `src/test.zig`，不得 import tokota（单元测试不依赖 Node 运行时即可跑；CI 另有 Node 冒烟步真加载产物跑 `test.js`，见 CI 说明）。需要 Node 的集成验证放 `test.js`（本地手动 `node test.js`）。
-8. **`registry.json` 勿手改**，它由 CI 机器人提交；手工改动会在下次发布时被覆盖或造成漂移。
+8. **`registry.json` 由 CI 机器人维护，日常禁止手改**；手工改动会在下次发布时被覆盖或造成漂移。唯一例外是**「待发布」形态**：bump version 之后可把 registry 条目的 `version` 与 `release_url` 预先同步为新值再 push（check_consistency 对该形态只警告不拦截，其余字段 diff 跳过）；CI 发布时会用 plugin.json 整体回写。除此之外仍禁止手改。
 9. **禁止提交构建产物**：`dist/`、`*.node`、`.zig-cache/`、`zig-out/`、`__pycache__/` 一律不入库（.gitignore 已覆盖）。
 10. **禁止硬编码任何凭据/内网地址**：CI 认证只允许 `${{ github.token }}` 或官方 actions；文档中的示例 host 一律用 `example.com` 或 GitHub URL。
 11. **第三方代码致谢与许可**：任何插件若 copy、改编或参考第三方仓库的代码/数据（含字典、知识库、PoC 源码、二进制引擎），必须满足：① 根 `README.md` / `README.zh-CN.md` 的显著致谢区列出上游（名称 + 仓库链接 + 许可证 + 用途），进仓第一眼可见；② `THIRD_PARTY.md` 登记条目（上游 URL、许可证、来源 commit、修改说明）；③ 插件目录内保留上游 LICENSE 原文；④ **无 LICENSE 的上游默认保留所有权利，禁止复制其代码/数据**，只允许独立实现或行为参考，并在 README 标注灵感来源；⑤ 许可证与仓库级 MIT 冲突时（如 GPL），该插件目录整体按其许可证对待并在 THIRD_PARTY.md 显著标注（先例：linux_exploit_suggester）。运行时上游源码快照 vendor 进插件目录是允许的（先例：bof-launcher、agentscan），但必须满足本条 ①②③；构建期依赖仍适用铁律 6（URL + hash 钉版）。
@@ -99,6 +99,7 @@ CI: 遍历 plugins/*，比对 version 与已有 tag <name>-v<version>
 - tag 格式：`<name>-v<version>`，如 `docker_detect-v3.1.0`
 - 手动强制重编：GitHub Actions 界面 workflow_dispatch（但 version 没变则依然幂等跳过；要强制重发请改 version）
 - `[skip ci]` 防止机器人提交再次触发 workflow
+- 一致性门禁允许「待发布」形态：push 时 registry 版本落后 plugin.json 恰好一个新版本 → 只 WARN 放行（CI 发布后回写）；registry 版本超前或与 plugin.json 不一致的其他形态 → 仍 ERROR 拦截。因此正常流程**无需**再手改 registry 预登记版本。
 
 ## registry.json schema
 

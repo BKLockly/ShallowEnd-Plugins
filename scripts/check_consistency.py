@@ -9,6 +9,8 @@ Checks:
   4. every plugin pins the same tokota url+hash
   5. registry.json entry exists and matches plugin.json
      (version / label / description / author / risk_level / methods)
+     - pending-release form is allowed: plugin.json version bumped ahead of
+       registry = WARN + skip field diff (CI rewrites the whole entry on release)
   6. no forbidden files inside plugin dirs (per-plugin CI, registry script copies, vendored deps)
 """
 
@@ -22,7 +24,12 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 FORBIDDEN = [".github", ".gitea", "update_registry.py", "zig-pkg", ".gitea/workflows"]
-SEMVER = re.compile(r"\d+\.\d+\.\d+")
+SEMVER = re.compile(r"(\d+)\.(\d+)\.(\d+)")
+
+
+def semver_tuple(v: str):
+    m = SEMVER.fullmatch(v)
+    return (int(m.group(1)), int(m.group(2)), int(m.group(3))) if m else None
 
 
 def fail(msg: str) -> None:
@@ -88,15 +95,26 @@ def main() -> int:
         if r is None:
             print(f"WARN: {name}: missing from registry.json (released by CI on version bump)")
         else:
-            for k in ("version", "label", "description", "author", "risk_level", "type"):
-                default = "native" if k == "type" else None
-                if r.get(k, default) != pj.get(k, default):
-                    fail(f"{name}: registry {k}={r.get(k)!r} != plugin.json {pj.get(k, 'native' if k == 'type' else None)!r}")
-            if r.get("methods") != pj.get("methods"):
-                fail(f"{name}: registry methods differ from plugin.json")
-            tag = f"{name}-v{pj['version']}"
-            if r.get("release_url") != f"https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/{tag}":
-                fail(f"{name}: registry release_url does not match tag {tag}")
+            # 待发布形态：plugin.json 已 bump、registry 仍为上一版 —— 只警告不拦截，
+            # CI 发布时会用 plugin.json 整体回写条目；反向（registry 新于 plugin.json）仍为错误。
+            pending_release = False
+            rv, pv = semver_tuple(r.get("version", "")), semver_tuple(pj.get("version", ""))
+            if rv is not None and pv is not None and rv != pv:
+                if pv > rv:
+                    print(f"WARN: {name}: plugin.json {pj['version']} > registry {r['version']} (pending CI release)")
+                    pending_release = True
+                else:
+                    fail(f"{name}: registry version {r['version']} != plugin.json {pj['version']} (registry not behind)")
+            if not pending_release:
+                for k in ("version", "label", "description", "author", "risk_level", "type"):
+                    default = "native" if k == "type" else None
+                    if r.get(k, default) != pj.get(k, default):
+                        fail(f"{name}: registry {k}={r.get(k)!r} != plugin.json {pj.get(k, 'native' if k == 'type' else None)!r}")
+                if r.get("methods") != pj.get("methods"):
+                    fail(f"{name}: registry methods differ from plugin.json")
+                tag = f"{name}-v{pj['version']}"
+                if r.get("release_url") != f"https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/{tag}":
+                    fail(f"{name}: registry release_url does not match tag {tag}")
 
         # 6. forbidden files (skip gitignored paths, e.g. zig's local zig-pkg/ cache)
         for bad in FORBIDDEN:
