@@ -101,7 +101,7 @@ test "execFd runs a binary from memfd and collects output" {
     const allocator = std.testing.allocator;
     const linux = std.os.linux;
 
-    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .limited(8 << 20));
+    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .unlimited);
     defer allocator.free(bin);
 
     const fd = try runner.createMemfd(bin);
@@ -145,7 +145,7 @@ test "execFd reports timeout and kills the process" {
     const allocator = std.testing.allocator;
     const linux = std.os.linux;
 
-    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sleep", allocator, .limited(8 << 20));
+    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sleep", allocator, .unlimited);
     defer allocator.free(bin);
 
     const fd = try runner.createMemfd(bin);
@@ -169,7 +169,7 @@ test "execFd drain gives up when a grandchild holds the pipe write end" {
     const allocator = std.testing.allocator;
     const linux = std.os.linux;
 
-    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .limited(8 << 20));
+    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .unlimited);
     defer allocator.free(bin);
 
     const fd = try runner.createMemfd(bin);
@@ -206,7 +206,7 @@ test "execFd timeout reaps the whole process group including grandchildren" {
     const allocator = std.testing.allocator;
     const linux = std.os.linux;
 
-    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .limited(8 << 20));
+    const bin = try std.Io.Dir.cwd().readFileAlloc(test_threaded.io(), "/bin/sh", allocator, .unlimited);
     defer allocator.free(bin);
 
     // 固定 pid 文件路径：测试前删残留、结束后清理
