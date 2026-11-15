@@ -5,6 +5,6 @@
   "version": "1.0.0",
   "author": "BKLockly",
   "risk_level": "low",
-  "type": "js",
+  "type": "driver",
   "methods": []
 }

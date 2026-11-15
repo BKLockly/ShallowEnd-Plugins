@@ -3,7 +3,7 @@
 [![Build and Release](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml/badge.svg)](https://github.com/BKLockly/ShallowEnd-Plugins/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[ShallowEnd](https://github.com/BKLockly/ShallowEnd) 市场官方插件 monorepo。插件使用 Zig + [Tokota](https://github.com/kofi-q/tokota) 编写，编译为 Node.js 原生 addon（`.node`，N-API），跨 Node 版本兼容；另有一类 **js 类型插件**（esbuild CJS bundle，数据库驱动）。市场索引 `registry.json` 位于仓库根目录，由 CI 机器人维护。
+[ShallowEnd](https://github.com/BKLockly/ShallowEnd) 市场官方插件 monorepo。插件使用 Zig + [Tokota](https://github.com/kofi-q/tokota) 编写，编译为 Node.js 原生 addon（`.node`，N-API），跨 Node 版本兼容；另有一类 **driver 类型插件**（esbuild CJS bundle，数据库驱动；旧值 js）。市场索引 `registry.json` 位于仓库根目录，由 CI 机器人维护。
 
 本仓与 ShallowEnd 主程序完全解耦：主程序仅通过 `plugin_marketplace_url` 配置指向本仓的 `registry.json`。
 
@@ -58,7 +58,7 @@ ShallowEnd-Plugins/
 | [mysql2](https://github.com/sidorares/node-mysql2) | MIT | `mysql_driver` 插件 bundle（esbuild 打包，目标机内存加载） |
 | [pg](https://github.com/brianc/node-postgres) | MIT | `pg_driver` 插件 bundle（esbuild 打包，目标机内存加载） |
 | [sql.js](https://github.com/sql-js/sql.js) | MIT | `sqlite_driver` 插件 bundle（esbuild 打包，目标机内存加载） |
-| [esbuild](https://github.com/evanw/esbuild) | MIT | js 类型驱动插件的打包器 |
+| [esbuild](https://github.com/evanw/esbuild) | MIT | driver 类型驱动插件的打包器 |
 
 ## 平台矩阵
 

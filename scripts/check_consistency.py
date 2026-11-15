@@ -72,11 +72,11 @@ def main() -> int:
         if not SEMVER.fullmatch(pj.get("version", "")):
             fail(f"{name}: version {pj.get('version')!r} is not strict semver (X.Y.Z)")
 
-        # 3./4. zon version + tokota pin：仅 native（Zig）插件；js 插件无 Zig 工程
+        # 3./4. zon version + tokota pin：仅 native（Zig）插件；driver 插件（旧值 js）无 Zig 工程
         zon_path = os.path.join(d, "build.zig.zon")
-        if pj.get("type", "native") == "js":
+        if pj.get("type", "native") in ("js", "driver"):
             if zon_path and os.path.exists(zon_path):
-                fail(f"{name}: js 插件不应携带 build.zig.zon")
+                fail(f"{name}: driver 插件不应携带 build.zig.zon")
         else:
             zon = open(zon_path).read()
             m = re.search(r'\.version = "([^"]+)"', zon)
