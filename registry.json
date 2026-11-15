@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-10-23T10:49:18Z",
+  "updated_at": "2026-11-15T14:40:51Z",
   "plugins": [
     {
       "name": "hello",
@@ -270,114 +270,6 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/file_compress-v0.3.1/file_compress-linux-x64.node",
           "sha256": "03113b2ac1384a5351e10de5e56b4bff577963f26d7038458066086f5363498d",
           "size": 193448
-        }
-      }
-    },
-    {
-      "name": "linux_exploit_suggester",
-      "label": "Linux Exploit Suggester",
-      "description": "自动检测 Linux 内核漏洞（纯 Zig 实现）",
-      "version": "1.3.1",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "type": "native",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/linux_exploit_suggester-v1.3.1",
-      "methods": [
-        {
-          "name": "check",
-          "label": "检测",
-          "description": "自动获取目标内核信息，检测可能的提权漏洞",
-          "params": []
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "linux_exploit_suggester-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/linux_exploit_suggester-v1.3.1/linux_exploit_suggester-linux-arm64.node",
-          "sha256": "3913cfd60a609b652844347c185d9984a20a4966956144fb29fe006119f5382c",
-          "size": 69816
-        },
-        "linux-x64": {
-          "filename": "linux_exploit_suggester-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/linux_exploit_suggester-v1.3.1/linux_exploit_suggester-linux-x64.node",
-          "sha256": "dfd981d8963145f77d159c3e2f822fb76c5c9fdd3fef0b6aa5a9ae022d86e170",
-          "size": 71144
-        }
-      }
-    },
-    {
-      "name": "sensitive_search",
-      "label": "敏感文件搜索",
-      "description": "在 Linux 系统上搜索敏感文件（证书、密钥、密码等）",
-      "version": "0.14.3",
-      "author": "BKLockly",
-      "risk_level": "medium",
-      "type": "native",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/sensitive_search-v0.14.3",
-      "methods": [
-        {
-          "name": "search",
-          "label": "敏感文件搜索",
-          "description": "扫描常见路径，通过文件名和文件内容匹配检测敏感文件（密钥、密码、Token等）",
-          "params": [
-            {
-              "name": "search_content",
-              "type": "checkbox",
-              "label": "搜索文件内容",
-              "required": false,
-              "default": false,
-              "description": "是否扫描文件内容（默认仅匹配文件名，开启后还会读取文件内容搜索密钥、密码等）"
-            }
-          ]
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "sensitive_search-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.14.3/sensitive_search-linux-arm64.node",
-          "sha256": "a0d644900c2bb152658cc962b96f1978341cab1649cf7f13011daa5b0c15f4fa",
-          "size": 32200
-        },
-        "linux-x64": {
-          "filename": "sensitive_search-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.14.3/sensitive_search-linux-x64.node",
-          "sha256": "cb8a255e198d735542c16f045aeac9664561a9975f109bc920b4929e22380cba",
-          "size": 32296
-        }
-      }
-    },
-    {
-      "name": "docker_detect",
-      "label": "Docker 环境检测",
-      "description": "检测目标是否运行在容器中，支持 /.dockerenv、/run/.containerenv、cgroup、mountinfo、环境变量、pid1 等多维度检测，输出 Runtime hints（docker/podman/kubernetes/lxc）",
-      "version": "3.1.0",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "type": "native",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.1.0",
-      "methods": [
-        {
-          "name": "detect",
-          "label": "Docker 检测",
-          "description": "检测当前环境是否为 Docker 容器",
-          "params": []
-        }
-      ],
-      "artifacts": {
-        "linux-arm64": {
-          "filename": "docker_detect-linux-arm64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.1.0/docker_detect-linux-arm64.node",
-          "sha256": "288957db328bd50b07fd67fbbd6214a8241390093d42688215ee1871b8923650",
-          "size": 23376
-        },
-        "linux-x64": {
-          "filename": "docker_detect-linux-x64.node",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.1.0/docker_detect-linux-x64.node",
-          "sha256": "770f63d872719b6a44a2d805cac1f5e3783f0fbe79955f8d3114eb46475bc308",
-          "size": 23728
         }
       }
     },
@@ -789,6 +681,114 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sqlite_driver-v1.0.1/sqlite_driver.js",
           "sha256": "1860ee24dd1d603a2c78e5bd4ebe67d22ee5ad5412a89e71550ee5480ea96e2c",
           "size": 1308546
+        }
+      }
+    },
+    {
+      "name": "docker_detect",
+      "label": "Docker 环境检测",
+      "description": "检测目标是否运行在容器中，支持 /.dockerenv、/run/.containerenv、cgroup、mountinfo、环境变量、pid1 等多维度检测，输出 Runtime hints（docker/podman/kubernetes/lxc）",
+      "version": "3.2.0",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/docker_detect-v3.2.0",
+      "methods": [
+        {
+          "name": "detect",
+          "label": "Docker 检测",
+          "description": "检测当前环境是否为 Docker 容器",
+          "params": []
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "docker_detect-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.2.0/docker_detect-linux-arm64.node",
+          "sha256": "63e440bb7f201d1f67bd3c81c9393307ac687a1dc7c548f604fe4dee21a705b4",
+          "size": 25072
+        },
+        "linux-x64": {
+          "filename": "docker_detect-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/docker_detect-v3.2.0/docker_detect-linux-x64.node",
+          "sha256": "a6924e5d177b7b5466222c01825cfabe721b276808a70d2b58dd30b8c37f0ea4",
+          "size": 25824
+        }
+      }
+    },
+    {
+      "name": "linux_exploit_suggester",
+      "label": "Linux Exploit Suggester",
+      "description": "自动检测 Linux 内核漏洞（纯 Zig 实现）",
+      "version": "1.3.2",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/linux_exploit_suggester-v1.3.2",
+      "methods": [
+        {
+          "name": "check",
+          "label": "检测",
+          "description": "自动获取目标内核信息，检测可能的提权漏洞",
+          "params": []
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "linux_exploit_suggester-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/linux_exploit_suggester-v1.3.2/linux_exploit_suggester-linux-arm64.node",
+          "sha256": "b24965a373a2d361ca5e004bdcb842b7eda03facb8394e0e584371b9ee04fb1d",
+          "size": 70312
+        },
+        "linux-x64": {
+          "filename": "linux_exploit_suggester-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/linux_exploit_suggester-v1.3.2/linux_exploit_suggester-linux-x64.node",
+          "sha256": "3b939173445463bafcc2f86feeed80db625986aab5525d4e974ee95e46d0c51f",
+          "size": 71928
+        }
+      }
+    },
+    {
+      "name": "sensitive_search",
+      "label": "敏感文件搜索",
+      "description": "在 Linux 系统上搜索敏感文件（证书、密钥、密码等）",
+      "version": "0.15.0",
+      "author": "BKLockly",
+      "risk_level": "medium",
+      "type": "native",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/sensitive_search-v0.15.0",
+      "methods": [
+        {
+          "name": "search",
+          "label": "敏感文件搜索",
+          "description": "扫描常见路径，通过文件名和文件内容匹配检测敏感文件（密钥、密码、Token等）",
+          "params": [
+            {
+              "name": "search_content",
+              "type": "checkbox",
+              "label": "搜索文件内容",
+              "required": false,
+              "default": false,
+              "description": "是否扫描文件内容（默认仅匹配文件名，开启后还会读取文件内容搜索密钥、密码等）"
+            }
+          ]
+        }
+      ],
+      "artifacts": {
+        "linux-arm64": {
+          "filename": "sensitive_search-linux-arm64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.15.0/sensitive_search-linux-arm64.node",
+          "sha256": "c7b77bb0ab322275d1ccebb17da69aa7a3781e2ca844c30237a672c433801774",
+          "size": 170104
+        },
+        "linux-x64": {
+          "filename": "sensitive_search-linux-x64.node",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.15.0/sensitive_search-linux-x64.node",
+          "sha256": "b5ed608d33caf39fdd28a329ef8af95f8f141b2354a56a5ddd70ed9dd47d40ed",
+          "size": 172456
         }
       }
     }
