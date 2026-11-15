@@ -59,7 +59,10 @@ pub const max_depth: usize = 6;
 pub const max_scanned: usize = 200000;
 /// 全局最多回传的命中行数
 pub const max_reported_matches: usize = 30;
-pub const output_buf_size: usize = 2 * 1024 * 1024;
+/// 输出缓冲 256KB：30 条命中行 × 4KB 路径 + 头尾统计远够。
+/// v0.14.3 及以前是 2MB 栈上缓冲（利用率 <0.5%，小 ulimit 环境有 SIGSEGV 面）；
+/// v0.15.0 起随 asyncTask 改为堆分配（cleanUp 释放）。
+pub const output_buf_size: usize = 256 * 1024;
 pub const content_scan_bytes: usize = 4096;
 
 /// 按目录名跳过（basename 精确匹配，任意层级生效）

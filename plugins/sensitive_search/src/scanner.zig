@@ -81,7 +81,9 @@ fn matchFile(dir_fd: std.posix.fd_t, entry_name: []const u8, search_content: boo
     if (!search_content) return null;
     if (!isTextExtension(entry_name)) return null;
 
-    const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY };
+    // O_NONBLOCK：命名管道按 POSIX 语义在无写者时 open 阻塞到天荒地老
+    // （v0.14.3 的永久挂死源），非阻塞模式下普通文件读取行为不变
+    const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY, .NONBLOCK = true };
     const fd = std.posix.openat(dir_fd, entry_name, open_flags, 0) catch return null;
     defer _ = std.c.close(fd);
 
@@ -185,7 +187,7 @@ pub fn scan(
     };
     defer _ = std.c.close(base_fd);
 
-    types.log(buf, len, truncated, "[DBUG] Scanning {s}/\n", .{base_path});
+    types.log(buf, len, truncated, "[DEBU] Scanning {s}/\n", .{base_path});
 
     walkDir(base_fd, "", 0, buf, len, total_scanned, matches_found, reported, errors_count, truncated, search_content);
 
