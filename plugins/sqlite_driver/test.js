@@ -1,5 +1,6 @@
 // 完整 roundtrip 测试：模拟 payload 的 dbDriverLoad 内存加载路径（new Function），
-// 覆盖 建表→写入→写回落盘→重开读取→Buffer 直开→空结果集→多语句结果集合并 的全链路。
+// 覆盖 建表→写入→写回落盘→重开读取→Buffer 直开→空结果集→多语句结果集合并→
+// 不存在路径新建库 的全链路。
 // 纯 JS（sql.js asm.js），mac/linux 均可直跑：node test.js
 const fs = require("fs");
 const path = require("path");
@@ -66,8 +67,21 @@ assert.strictEqual(typeof api.Database, "function", "exports.Database must be a 
   const memRows = await mem.all("SELECT count(*) AS c FROM users");
   assert.strictEqual(memRows[0].c, 2);
 
+  // 路径不存在 → 空库起步建新文件（v1.0.2：原实现无条件 readFileSync 直接 ENOENT）
+  const newPath = path.join(tmp, "fresh.db");
+  assert.strictEqual(fs.existsSync(newPath), false, "new-db path must not exist yet");
+  let fresh = new api.Database(newPath);
+  await fresh.run("CREATE TABLE t (k TEXT)");
+  await fresh.run("INSERT INTO t (k) VALUES ('v')");
+  fresh.close();
+  assert.strictEqual(fs.existsSync(newPath), true, "persist must create the file on disk");
+  fresh = new api.Database(newPath);
+  const freshRows = await fresh.all("SELECT k FROM t");
+  assert.deepStrictEqual(freshRows, [{ k: "v" }], "new-db content readable after reopen");
+
   // 非法构造
   assert.throws(() => new api.Database(42), /Database\(path \| Buffer\)/);
+  assert.throws(() => new api.Database(""), /Database\(path \| Buffer\)/);
 
   console.log("sqlite_driver test.js: all assertions passed");
 })().catch((e) => {

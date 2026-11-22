@@ -1,6 +1,6 @@
 // sql.js（SQLite C 引擎的 asm.js 纯 JS 构建）薄包装：对齐 payload 的 sqlite 消费语义。
 // payload 侧 dbDriverLoad 校验导出形状（typeof api.Database === 'function'），消费约定：
-//   const conn = new Database(filePath);        —— 同步构造，path 为目标机上的 .db 文件
+//   const conn = new Database(filePath);        —— 同步构造，path 为目标机上的 .db 文件；不存在则空库起步
 //   const rows = await conn.all(sql);           —— 行对象数组（fields 由 keys 推导）；多语句结果集按顺序拼接
 //   const n    = await conn.run(sql);           —— 受影响行数；写后自动持久化写回源文件
 //   conn.close();                               —— 同步，调用后连接可安全弃置
@@ -25,7 +25,12 @@ class Database {
             this._bytes = pathOrBuffer;
         } else if (typeof pathOrBuffer === 'string' && pathOrBuffer.length > 0) {
             this._path = pathOrBuffer;
-            this._bytes = fs.readFileSync(pathOrBuffer);
+            // 文件不存在 → 空 Buffer 起步建新库（sql.js 对空 Buffer 天然支持），
+            // 首次 run 后 _persist 写回落盘；存在才读内容——已存在但不可读
+            // （权限/目录等）仍由 readFileSync 原样抛错，不静默兜底
+            this._bytes = fs.existsSync(pathOrBuffer)
+                ? fs.readFileSync(pathOrBuffer)
+                : Buffer.alloc(0);
         } else {
             throw new Error('sqlite: Database(path | Buffer) required');
         }
