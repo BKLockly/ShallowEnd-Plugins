@@ -1,6 +1,6 @@
 {
   "marketplace_version": 1,
-  "updated_at": "2026-11-15T14:40:51Z",
+  "updated_at": "2026-11-22T06:03:52Z",
   "plugins": [
     {
       "name": "hello",
@@ -665,26 +665,6 @@
       }
     },
     {
-      "name": "sqlite_driver",
-      "label": "SQLite 驱动",
-      "description": "SQLite 数据库驱动（sql.js asm.js 纯 JS bundle），供推送目标机内存加载（dbDriverLoad）；整库内存打开，run 后自动写回源文件",
-      "version": "1.0.1",
-      "author": "BKLockly",
-      "risk_level": "low",
-      "type": "driver",
-      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
-      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/sqlite_driver-v1.0.1",
-      "methods": [],
-      "artifacts": {
-        "any": {
-          "filename": "sqlite_driver.js",
-          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sqlite_driver-v1.0.1/sqlite_driver.js",
-          "sha256": "1860ee24dd1d603a2c78e5bd4ebe67d22ee5ad5412a89e71550ee5480ea96e2c",
-          "size": 1308546
-        }
-      }
-    },
-    {
       "name": "docker_detect",
       "label": "Docker 环境检测",
       "description": "检测目标是否运行在容器中，支持 /.dockerenv、/run/.containerenv、cgroup、mountinfo、环境变量、pid1 等多维度检测，输出 Runtime hints（docker/podman/kubernetes/lxc）",
@@ -789,6 +769,26 @@
           "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sensitive_search-v0.15.0/sensitive_search-linux-x64.node",
           "sha256": "b5ed608d33caf39fdd28a329ef8af95f8f141b2354a56a5ddd70ed9dd47d40ed",
           "size": 172456
+        }
+      }
+    },
+    {
+      "name": "sqlite_driver",
+      "label": "SQLite 驱动",
+      "description": "SQLite 数据库驱动（sql.js asm.js 纯 JS bundle），供推送目标机内存加载（dbDriverLoad）；整库内存打开，run 后自动写回源文件",
+      "version": "1.0.2",
+      "author": "BKLockly",
+      "risk_level": "low",
+      "type": "driver",
+      "repo_url": "https://github.com/BKLockly/ShallowEnd-Plugins",
+      "release_url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/tag/sqlite_driver-v1.0.2",
+      "methods": [],
+      "artifacts": {
+        "any": {
+          "filename": "sqlite_driver.js",
+          "url": "https://github.com/BKLockly/ShallowEnd-Plugins/releases/download/sqlite_driver-v1.0.2/sqlite_driver.js",
+          "sha256": "5a497f3a93bc747dbdf8f61208f5caac69781fe479d3bf4491506c0b648fc3eb",
+          "size": 1308580
         }
       }
     }
